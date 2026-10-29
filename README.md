@@ -11,3 +11,4 @@ A simple Android app for managing personal finances – track income and expense
 
 ## Build
 The project uses Gradle 8.5. CI is set up with GitHub Actions (`.github/workflows/android.yml`).
+# Update
