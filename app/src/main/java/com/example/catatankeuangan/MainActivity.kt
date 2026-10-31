@@ -72,8 +72,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
-import androidx.compose.material3.BottomNavigation
-import androidx.compose.material3.BottomNavigationItem
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -138,7 +138,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(repo: FinanceRepository, onAddTransaction: () -> Unit = {}) {
+fun HomeScreen(repo: FinanceRepository) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     val income = allTransactions.filter { it.type == Transaction.Type.INCOME }.sumOf { it.amount }
     val expense = allTransactions.filter { it.type == Transaction.Type.EXPENSE }.sumOf { it.amount }
@@ -711,7 +711,7 @@ fun TransactionItem(tx: Transaction) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionsScreen(repo: FinanceRepository, onAddTransaction: () -> Unit) {
+fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
@@ -772,7 +772,7 @@ fun TransactionsScreen(repo: FinanceRepository, onAddTransaction: () -> Unit) {
             }
 
             FloatingActionButton(
-                onClick = onAddTransaction,
+                onClick = { navController.navigate("add_transaction/-1") },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
@@ -1619,23 +1619,23 @@ fun FinancialLedgerApp() {
     
     Scaffold(
         bottomBar = {
-            BottomNavigation(
+            NavigationBar(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
-                BottomNavigationItem(
+                NavigationBarItem(
                     selected = currentRoute == "home",
                     onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true }; launchSingleTop = true; restoreState = true } },
                     icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
                     label = { Text("Home") }
                 )
-                BottomNavigationItem(
+                NavigationBarItem(
                     selected = currentRoute == "transactions",
                     onClick = { navController.navigate("transactions") { popUpTo("transactions") { inclusive = true }; launchSingleTop = true; restoreState = true } },
                     icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
                     label = { Text("Transactions") }
                 )
-                BottomNavigationItem(
+                NavigationBarItem(
                     selected = currentRoute == "settings",
                     onClick = { navController.navigate("settings") { popUpTo("settings") { inclusive = true }; launchSingleTop = true; restoreState = true } },
                     icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
@@ -1657,8 +1657,8 @@ fun FinancialLedgerApp() {
         }
     ) { innerPadding ->
         NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
-            composable("home") { HomeScreen(repo = repo, onAddTransaction = { navController.navigate("add_transaction/-1") }) }
-            composable("transactions") { TransactionsScreen(repo = repo, onAddTransaction = { navController.navigate("add_transaction/-1") }) }
+            composable("home") { HomeScreen(repo = repo) }
+            composable("transactions") { TransactionsScreen(repo = repo, navController = navController) }
             composable(
                 route = "add_transaction/{txId}",
                 arguments = listOf(navArgument("txId") { type = NavType.IntType })
