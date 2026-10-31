@@ -15,6 +15,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -85,8 +86,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -121,6 +120,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberScaffoldState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -130,7 +130,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.compose.runtime.LocalContext
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Surface
 import java.text.NumberFormat
 import java.util.*
 import androidx.compose.ui.unit.sp
@@ -1615,19 +1614,16 @@ fun SettingsItem(
 fun FinancialLedgerApp() {
     val repo = FinanceRepository.getInstance(LocalContext.current)
     val navController = rememberNavController()
-    val scaffoldState = rememberScaffoldState()
-    val scope = rememberCoroutineScope()
+    
+    val backStackEntry by navController.getBackStackEntry(route = "home")
+    val currentRoute = backStackEntry?.destination?.route
     
     Scaffold(
-        scaffoldState = scaffoldState,
         bottomBar = {
             BottomNavigation(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
-                val navBackStackEntry by navController.getBackStackEntry(route = "home")
-                val currentRoute = navBackStackEntry?.destination?.route
-                
                 BottomNavigationItem(
                     selected = currentRoute == "home",
                     onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true }; launchSingleTop = true; restoreState = true } },
@@ -1637,7 +1633,7 @@ fun FinancialLedgerApp() {
                 BottomNavigationItem(
                     selected = currentRoute == "transactions",
                     onClick = { navController.navigate("transactions") { popUpTo("transactions") { inclusive = true }; launchSingleTop = true; restoreState = true } },
-                    icon = { Icon(Icons.Filled.ReceiptLong, contentDescription = "Transactions") },
+                    icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
                     label = { Text("Transactions") }
                 )
                 BottomNavigationItem(
@@ -1651,7 +1647,7 @@ fun FinancialLedgerApp() {
         floatingActionButton = {
             when (currentRoute) {
                 "home", "transactions" -> FloatingActionButton(
-                    onClick = onAddTransaction,
+                    onClick = { navController.navigate("add_transaction/-1") },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
@@ -1671,12 +1667,14 @@ fun FinancialLedgerApp() {
                 val txId = backStackEntry.arguments?.getInt("txId") ?: -1
                 AddTransactionScreen(
                     repo = repo,
-                    txId = txId,
-                    onSave = { navController.popBackStack() },
-                    onCancel = { navController.popBackStack() }
+                    navController = navController,
+                    txId = txId
                 )
             }
-            composable("settings") { SettingsScreen(repo = repo) }
+            composable("settings") {
+                val shareIntentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
+                SettingsScreen(repo = repo, shareIntentLauncher = shareIntentLauncher)
+            }
         }
     }
 }
