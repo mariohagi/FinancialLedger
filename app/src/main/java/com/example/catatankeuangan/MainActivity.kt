@@ -12,6 +12,7 @@ import android.net.Uri
 import android.widget.DatePicker
 import android.widget.TimePicker
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -1591,3 +1592,14 @@ fun SettingsItem(
         }
     }
 }
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            FinancialLedgerApp()
+        }
+    }
+}
+
