@@ -13,4 +13,7 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories")
     fun getAllFlow(): Flow<List<Category>>
+    
+    @Query("DELETE FROM categories")
+    fun deleteAll()
 }

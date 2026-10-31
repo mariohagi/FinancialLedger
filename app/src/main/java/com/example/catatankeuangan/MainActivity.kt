@@ -2,15 +2,18 @@
 
 package com.example.catatankeuangan
 
-
 import android.os.Bundle
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.net.Uri
 import android.widget.DatePicker
 import android.widget.TimePicker
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +65,8 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -95,6 +100,7 @@ import com.example.catatankeuangan.ui.design.FinanceFormatter
 import com.example.catatankeuangan.Category
 import com.example.catatankeuangan.FinanceRepository
 import com.example.catatankeuangan.Transaction
+import com.example.catatankeuangan.WalletSource
 import com.example.catatankeuangan.ui.design.FinanceShapes
 import com.example.catatankeuangan.ui.design.FinanceSpacing
 import com.example.catatankeuangan.ui.design.LightColorScheme
@@ -105,119 +111,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Typography
 import androidx.compose.ui.Modifier.Companion
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.material3.Surface
 import java.text.NumberFormat
 import java.util.*
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
-
-class MainActivity : ComponentActivity() {
-    private lateinit var repo: FinanceRepository
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        repo = FinanceRepository.getInstance(this)
-        setContent {
-            FinancialLedgerTheme {
-                FinancialLedgerApp(repo)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FinancialLedgerTheme(
-    content: @Composable () -> Unit
-) {
-    val configuration = LocalConfiguration.current
-    val darkTheme = (configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    val typography = Typography(
-        displayLarge = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.W300),
-        displayMedium = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.W300),
-        displaySmall = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.W400),
-        headlineLarge = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.W600),
-        headlineMedium = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.W600),
-        headlineSmall = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.W600),
-        titleLarge = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.W600),
-        titleMedium = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.W500),
-        titleSmall = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.W500),
-        bodyLarge = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.W400),
-        bodyMedium = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.W400),
-        bodySmall = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.W400),
-        labelLarge = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.W500),
-        labelMedium = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.W500),
-        labelSmall = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.W500),
-    )
-    val shapes = androidx.compose.material3.Shapes(
-        extraSmall = FinanceShapes.ExtraSmall,
-        small = FinanceShapes.Small,
-        medium = FinanceShapes.Medium,
-        large = FinanceShapes.Large,
-        extraLarge = FinanceShapes.ExtraLarge,
-    )
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = typography,
-        shapes = shapes,
-        content = content
-    )
-}
-
-@Composable
-fun BottomNavBar(navController: NavHostController) {
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    NavigationBar {
-        NavigationBarItem(
-            selected = currentRoute == "home",
-            onClick = { navController.navigate("home") },
-            icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-            label = { Text("Home") },
-            alwaysShowLabel = true
-        )
-        NavigationBarItem(
-            selected = currentRoute == "transactions",
-            onClick = { navController.navigate("transactions") },
-            icon = { Icon(Icons.Filled.List, contentDescription = null) },
-            label = { Text("Transactions") },
-            alwaysShowLabel = true
-        )
-        NavigationBarItem(
-            selected = currentRoute == "settings",
-            onClick = { navController.navigate("settings") },
-            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-            label = { Text("Settings") },
-            alwaysShowLabel = true
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FinancialLedgerApp(repo: FinanceRepository) {
-    val navController = rememberNavController()
-    Scaffold(
-        bottomBar = { BottomNavBar(navController) }
-    ) { innerPadding ->
-        NavHost(navController, startDestination = "home") {
-            composable("home") { HomeScreen(repo) }
-            composable("transactions") { TransactionsScreen(repo, navController) }
-            composable(
-                route = "add_transaction/{txId}"
-            ) { backStackEntry ->
-                val txId = backStackEntry.arguments?.getInt("txId") ?: -1
-                AddTransactionScreen(repo, navController, txId)
-            }
-            composable("settings") { SettingsScreen() }
-        }
-    }
-}
-
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(repo: FinanceRepository) {
@@ -225,23 +126,40 @@ fun HomeScreen(repo: FinanceRepository) {
     val income = allTransactions.filter { it.type == Transaction.Type.INCOME }.sumOf { it.amount }
     val expense = allTransactions.filter { it.type == Transaction.Type.EXPENSE }.sumOf { it.amount }
     val balance = income + expense
-
+    
+    val walletBalance by repo.walletBalance.collectAsState(initial = 0.0)
+    val bankBalance by repo.bankBalance.collectAsState(initial = 0.0)
+    val stockWalletBalance by repo.stockWalletBalance.collectAsState(initial = 0.0)
+    
     val recentTransactions = allTransactions.reversed().take(5)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        GreetingHeader()
-        BalanceCard(balance = balance)
-        SummaryRow(income = income, expense = expense)
-        ChartCard(income = income, expense = expense)
-        RecentTransactionsSection(
-            transactions = recentTransactions,
-            onSeeAll = { }
-        )
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            GreetingHeader()
+            BalanceCard(
+                totalBalance = balance,
+                walletBalance = walletBalance,
+                bankBalance = bankBalance,
+                stockWalletBalance = stockWalletBalance
+            )
+            SummaryRow(income = income, expense = expense)
+            ChartCard(income = income, expense = expense)
+            RecentTransactionsSection(
+                transactions = recentTransactions,
+                onSeeAll = { }
+            )
+        }
     }
 }
 
@@ -287,7 +205,12 @@ fun GreetingHeader() {
 }
 
 @Composable
-fun BalanceCard(balance: Double) {
+fun BalanceCard(
+    totalBalance: Double,
+    walletBalance: Double,
+    bankBalance: Double,
+    stockWalletBalance: Double
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -309,7 +232,7 @@ fun BalanceCard(balance: Double) {
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                     Text(
-                        FinanceFormatter.formatIDR(balance),
+                        FinanceFormatter.formatIDR(totalBalance),
                         style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.W700,
                         color = MaterialTheme.colorScheme.onPrimary
@@ -328,22 +251,31 @@ fun BalanceCard(balance: Double) {
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                QuickStat(
-                    label = "This Month",
-                    value = "Rp 2.5M",
-                    trend = "+12%",
-                    trendPositive = true
+                WalletSourceCard(
+                    label = "Wallet",
+                    amount = walletBalance,
+                    icon = Icons.Filled.AccountBalanceWallet,
+                    iconColor = FinanceColors.IncomeGreen,
+                    containerColor = FinanceColors.IncomeGreenContainer
                 )
-                QuickStat(
-                    label = "vs Last Month",
-                    value = "Rp 1.8M",
-                    trend = "-5%",
-                    trendPositive = false
+                WalletSourceCard(
+                    label = "Bank",
+                    amount = bankBalance,
+                    icon = Icons.Filled.AccountBalance,
+                    iconColor = FinanceColors.IncomeGreen,
+                    containerColor = FinanceColors.IncomeGreenContainer
+                )
+                WalletSourceCard(
+                    label = "Stock Wallet",
+                    amount = stockWalletBalance,
+                    icon = Icons.Filled.TrendingUp,
+                    iconColor = FinanceColors.IncomeGreen,
+                    containerColor = FinanceColors.IncomeGreenContainer
                 )
             }
         }
@@ -351,22 +283,48 @@ fun BalanceCard(balance: Double) {
 }
 
 @Composable
-fun QuickStat(label: String, value: String, trend: String, trendPositive: Boolean) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+fun WalletSourceCard(
+    label: String,
+    amount: Double,
+    icon: ImageVector,
+    iconColor: Color,
+    containerColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .weight(1f)
+            .height(100.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = FinanceShapes.Medium,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onPrimary)
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Icon(
-                if (trendPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
-                contentDescription = "",
-                tint = if (trendPositive) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed,
-                modifier = Modifier.size(12.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier.size(28.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = "", tint = iconColor, modifier = Modifier.size(18.dp))
+                }
+            }
+            Text(
+                FinanceFormatter.formatIDR(amount),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.W700,
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Text(trend, style = MaterialTheme.typography.labelSmall, color = if (trendPositive) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed)
         }
     }
 }
@@ -713,6 +671,12 @@ fun TransactionItem(tx: Transaction) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outlineVariant)
+                        Text(
+                            tx.walletSource.displayName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -864,6 +828,8 @@ fun TransactionItemWithActions(
                         Text(tx.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outlineVariant)
                         Text(FinanceDateFormatter.formatDateTime(tx.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outlineVariant)
+                        Text(tx.walletSource.displayName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -910,6 +876,7 @@ fun AddTransactionScreen(
     var amountStr by remember { mutableStateOf(Math.abs(initialTx?.amount ?: 0.0).toString()) }
     var type by remember { mutableStateOf(initialTx?.type ?: Transaction.Type.INCOME) }
     var category by remember { mutableStateOf(initialTx?.category ?: categories.firstOrNull()?.name ?: "General") }
+    var walletSource by remember { mutableStateOf(initialTx?.walletSource ?: WalletSource.WALLET) }
     var selectedDate by remember { mutableStateOf(initialTx?.date ?: Date()) }
 
     val dateFormatter = remember { java.text.SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")) }
@@ -1010,6 +977,11 @@ fun AddTransactionScreen(
                 onCategoryChange = { category = it }
             )
 
+            WalletSourceSelector(
+                selectedWalletSource = walletSource,
+                onWalletSourceChange = { walletSource = it }
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1061,6 +1033,7 @@ fun AddTransactionScreen(
                             amount = finalAmount,
                             type = type,
                             category = category,
+                            walletSource = walletSource,
                             date = selectedDate
                         )
                         scope.launch(Dispatchers.IO) {
@@ -1209,6 +1182,122 @@ fun CategorySelector(
 }
 
 @Composable
+fun WalletSourceSelector(
+    selectedWalletSource: WalletSource,
+    onWalletSourceChange: (WalletSource) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = selectedWalletSource.displayName,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Wallet Source") },
+                trailingIcon = {
+                    Icon(
+                        Icons.Filled.ExpandMore,
+                        contentDescription = "Wallet Source",
+                        tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = true },
+                shape = FinanceShapes.Medium
+            )
+            if (expanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { expanded = false }
+                )
+            }
+        }
+
+        if (expanded) {
+            WalletSourceDropdownContainer(
+                selectedWalletSource = selectedWalletSource,
+                onWalletSourceClick = { source ->
+                    onWalletSourceChange(source)
+                    expanded = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun WalletSourceDropdownContainer(
+    selectedWalletSource: WalletSource,
+    onWalletSourceClick: (WalletSource) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        WalletSource.values().forEach { source ->
+            val isSelected = source == selectedWalletSource
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else Color.Transparent,
+                        FinanceShapes.Medium
+                    )
+                    .clickable { onWalletSourceClick(source) }
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(iconBgColor, RoundedCornerShape(20.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            when (source) {
+                                WalletSource.WALLET -> Icons.Filled.AccountBalanceWallet
+                                WalletSource.BANK -> Icons.Filled.AccountBalance
+                                WalletSource.STOCK_WALLET -> Icons.Filled.TrendingUp
+                            },
+                            contentDescription = source.displayName,
+                            tint = iconColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    source.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                if (isSelected) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun DropdownContainer(
     categories: List<Category>,
     selectedCategory: String,
@@ -1274,8 +1363,13 @@ fun DropdownContainer(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(repo: FinanceRepository, shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>) {
+    val context = LocalContext.current
+    val themePreference = rememberThemePreference(context)
+    val scope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1291,10 +1385,14 @@ fun SettingsScreen() {
                 SettingsSection(title = "Appearance") {
                     SettingsItem(
                         title = "Theme",
-                        subtitle = "Light, Dark, or System default",
+                        subtitle = when (themePreference.value) {
+                            0 -> "Light"
+                            1 -> "Dark"
+                            else -> "System Default"
+                        },
                         leadingIcon = { Icon(Icons.Filled.Brightness6, contentDescription = "") },
                         trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
-                        onClick = { }
+                        onClick = { showThemeDialog(context, themePreference) }
                     )
                 }
                 SettingsSection(title = "Data") {
@@ -1303,14 +1401,14 @@ fun SettingsScreen() {
                         subtitle = "Export transactions to CSV",
                         leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = "") },
                         trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
-                        onClick = { }
+                        onClick = { exportData(context, repo, scope) }
                     )
                     SettingsItem(
                         title = "Clear All Data",
                         subtitle = "Delete all transactions and categories",
                         leadingIcon = { Icon(Icons.Filled.DeleteForever, contentDescription = "") },
                         trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
-                        onClick = { },
+                        onClick = { showClearDataDialog(context, repo, scope) },
                         isDestructive = true
                     )
                 }
@@ -1331,6 +1429,99 @@ fun SettingsScreen() {
             }
         }
     }
+}
+
+@Composable
+fun rememberThemePreference(context: Context): MutableState<Int> {
+    val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    val initialValue = prefs.getInt("theme_mode", 2) // 0=Light, 1=Dark, 2=System
+    return remember { mutableStateOf(initialValue) }
+}
+
+fun showThemeDialog(context: Context, themePreference: MutableState<Int>) {
+    val options = arrayOf("Light", "Dark", "System Default")
+    android.app.AlertDialog.Builder(context)
+        .setTitle("Choose Theme")
+        .setSingleChoiceItems(options, themePreference.value) { _, which ->
+            themePreference.value = which
+            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .putInt("theme_mode", which)
+                .apply()
+            // Apply theme change
+            val activity = context as? androidx.appcompat.app.AppCompatActivity
+            activity?.let {
+                when (which) {
+                    0 -> it.delegate.setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
+                    1 -> it.delegate.setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
+                    else -> it.delegate.setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                }
+            }
+        }
+        .setPositiveButton("OK") { _, _ -> }
+        .show()
+}
+
+fun exportData(context: Context, repo: FinanceRepository, scope: kotlinx.coroutines.CoroutineScope) {
+    scope.launch(Dispatchers.IO) {
+        val transactions = repo.db.transactionDao().getAll()
+        val csv = StringBuilder()
+        csv.appendLine("ID,Description,Amount,Type,Category,Wallet Source,Date")
+        transactions.forEach { tx ->
+            csv.appendLine("${tx.id},${tx.description},${tx.amount},${tx.type},${tx.category},${tx.walletSource.displayName},${tx.date.time}")
+        }
+        
+        // Save to Downloads folder
+        val fileName = "financial_ledger_export_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
+        val resolver = context.contentResolver
+        val contentValues = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "text/csv")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+            }
+        }
+        val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+        uri?.let { uri ->
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                outputStream.write(csv.toString().toByteArray())
+            }
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            handler.post {
+                android.widget.Toast.makeText(context, "Exported to Downloads/$fileName", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+}
+
+fun showClearDataDialog(context: Context, repo: FinanceRepository, scope: kotlinx.coroutines.CoroutineScope) {
+    android.app.AlertDialog.Builder(context)
+        .setTitle("Clear All Data")
+        .setMessage("This will permanently delete all transactions and categories. This action cannot be undone.")
+        .setPositiveButton("Delete") { _, _ ->
+            scope.launch(Dispatchers.IO) {
+                repo.db.transactionDao().deleteAll()
+                repo.db.categoryDao().deleteAll()
+                // Re-seed default categories
+                val defaultCategories = listOf(
+                    Category("Food & Dining", android.R.drawable.ic_menu_mapmode),
+                    Category("Transport", android.R.drawable.ic_menu_directions),
+                    Category("Shopping", android.R.drawable.ic_menu_add),
+                    Category("Entertainment", android.R.drawable.ic_menu_gallery),
+                    Category("Salary", android.R.drawable.ic_menu_myplaces),
+                    Category("Freelance", android.R.drawable.ic_menu_edit),
+                    Category("Investment", android.R.drawable.ic_menu_today),
+                    Category("General", android.R.drawable.ic_menu_info_details)
+                )
+                defaultCategories.forEach { repo.db.categoryDao().insert(it) }
+            }
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            handler.post {
+                android.widget.Toast.makeText(context, "All data cleared", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+        .setNegativeButton("Cancel") { _, _ -> }
+        .show()
 }
 
 @Composable

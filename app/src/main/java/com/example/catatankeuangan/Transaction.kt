@@ -11,7 +11,14 @@ data class Transaction(
     val amount: Double,
     val type: Type,
     val category: String = "General",
+    val walletSource: WalletSource = WalletSource.WALLET,
     val date: Date = Date()
 ) {
     enum class Type { INCOME, EXPENSE }
+}
+
+enum class WalletSource(val displayName: String, val icon: String) {
+    WALLET("Wallet", "account_balance_wallet"),
+    BANK("Bank", "account_balance"),
+    STOCK_WALLET("Stock Wallet", "trending_up")
 }

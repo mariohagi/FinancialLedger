@@ -51,6 +51,11 @@ class FinanceRepository private constructor(private val db: AppDatabase) {
     val incomeTransactions: Flow<List<Transaction>> = db.transactionDao().getByTypeFlow(Transaction.Type.INCOME)
     val expenseTransactions: Flow<List<Transaction>> = db.transactionDao().getByTypeFlow(Transaction.Type.EXPENSE)
     val allCategories: Flow<List<Category>> = db.categoryDao().getAllFlow()
+    
+    // Wallet source balance flows
+    val walletBalance: Flow<Double> = db.transactionDao().getBalanceByWalletSourceFlow(WalletSource.WALLET)
+    val bankBalance: Flow<Double> = db.transactionDao().getBalanceByWalletSourceFlow(WalletSource.BANK)
+    val stockWalletBalance: Flow<Double> = db.transactionDao().getBalanceByWalletSourceFlow(WalletSource.STOCK_WALLET)
 
     suspend fun insert(tx: Transaction) = db.transactionDao().insert(tx)
     suspend fun update(tx: Transaction) = db.transactionDao().update(tx)

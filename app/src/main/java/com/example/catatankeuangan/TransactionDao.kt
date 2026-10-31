@@ -25,5 +25,13 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE type = :type")
     fun getByTypeFlow(type: Transaction.Type): Flow<List<Transaction>>
-}
 
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE walletSource = :walletSource")
+    fun getBalanceByWalletSource(walletSource: WalletSource): Double
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE walletSource = :walletSource")
+    fun getBalanceByWalletSourceFlow(walletSource: WalletSource): Flow<Double>
+    
+    @Query("DELETE FROM transactions")
+    fun deleteAll()
+}
