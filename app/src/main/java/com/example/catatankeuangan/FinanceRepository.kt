@@ -7,7 +7,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
 
-class FinanceRepository private constructor(private val db: AppDatabase) {
+class FinanceRepository private constructor(internal val db: AppDatabase) {
     companion object {
         @Volatile private var INSTANCE: FinanceRepository? = null
         fun getInstance(context: Context): FinanceRepository {

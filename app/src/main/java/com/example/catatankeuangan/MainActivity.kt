@@ -17,6 +17,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.rememberScrollState
+import androidx.compose.foundation.layout.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -261,21 +263,24 @@ fun BalanceCard(
                     amount = walletBalance,
                     icon = Icons.Filled.AccountBalanceWallet,
                     iconColor = FinanceColors.IncomeGreen,
-                    containerColor = FinanceColors.IncomeGreenContainer
+                    containerColor = FinanceColors.IncomeGreenContainer,
+                    modifier = Modifier.weight(1f)
                 )
                 WalletSourceCard(
                     label = "Bank",
                     amount = bankBalance,
                     icon = Icons.Filled.AccountBalance,
                     iconColor = FinanceColors.IncomeGreen,
-                    containerColor = FinanceColors.IncomeGreenContainer
+                    containerColor = FinanceColors.IncomeGreenContainer,
+                    modifier = Modifier.weight(1f)
                 )
                 WalletSourceCard(
                     label = "Stock Wallet",
                     amount = stockWalletBalance,
                     icon = Icons.Filled.TrendingUp,
                     iconColor = FinanceColors.IncomeGreen,
-                    containerColor = FinanceColors.IncomeGreenContainer
+                    containerColor = FinanceColors.IncomeGreenContainer,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -293,7 +298,6 @@ fun WalletSourceCard(
 ) {
     Card(
         modifier = modifier
-            .weight(1f)
             .height(100.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = FinanceShapes.Medium,
