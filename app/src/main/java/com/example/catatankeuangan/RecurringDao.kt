@@ -7,6 +7,6 @@ interface RecurringDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(entry: RecurringEntry)
 
-    @Query("SELECT * FROM recurringentry")
+    @Query("SELECT * FROM recurring_entries")
     fun getAll(): List<RecurringEntry>
 }

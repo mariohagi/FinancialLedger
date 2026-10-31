@@ -1,0 +1,47 @@
+<resources>
+    <!-- Dark Theme - Modern Fintech Green/Teal -->
+    <color name="primary">#80E5D0</color>
+    <color name="primary_container">#005345</color>
+    <color name="on_primary">#003830</color>
+    <color name="on_primary_container">#A7FFF1</color>
+
+    <color name="secondary">#B8CCE4</color>
+    <color name="secondary_container">#2D4D6E</color>
+    <color name="on_secondary">#1D334B</color>
+    <color name="on_secondary_container">#D6E4F0</color>
+
+    <color name="tertiary">#FFB951</color>
+    <color name="tertiary_container">#4E3300</color>
+    <color name="on_tertiary">#332200</color>
+    <color name="on_tertiary_container">#FFDDB3</color>
+
+    <color name="income_green">#79DB9E</color>
+    <color name="income_green_container">#005F33</color>
+    <color name="expense_red">#FFB4AB</color>
+    <color name="expense_red_container">#93000A</color>
+
+    <color name="surface">#131716</color>
+    <color name="surface_variant">#3F4544</color>
+    <color name="surface_container_low">#1E2322</color>
+    <color name="surface_container">#262B2A</color>
+    <color name="surface_container_high">#313736</color>
+    <color name="surface_container_highest">#3C4241</color>
+
+    <color name="background">#131716</color>
+    <color name="on_background">#E2E4E3</color>
+    <color name="on_surface">#E2E4E3</color>
+    <color name="on_surface_variant">#C3C9C8</color>
+
+    <color name="outline">#8D9392</color>
+    <color name="outline_variant">#424847</color>
+
+    <color name="error">#FFB4AB</color>
+    <color name="error_container">#93000A</color>
+    <color name="on_error">#690005</color>
+    <color name="on_error_container">#FFDAD6</color>
+
+    <color name="scrim">#000000</color>
+    <color name="shadow">#000000</color>
+
+    <color name="divider">#2C2C2C</color>
+</resources>

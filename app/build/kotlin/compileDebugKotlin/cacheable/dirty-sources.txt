@@ -1,0 +1,11 @@
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\FinanceRepository.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\Category.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\RecurringDao.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\Transaction.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\AppDatabase.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\TransactionDao.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\CategoryDao.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\Converters.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\MainActivity.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\RecurringEntry.kt
+C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\java\com\example\catatankeuangan\ui\design\DesignSystem.kt
