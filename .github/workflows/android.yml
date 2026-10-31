@@ -40,8 +40,9 @@ jobs:
         with:
           gradle-version: '8.5'
           validate-wrappers: false
-      - name: Normalize line endings for gradlew
-        run: sed -i 's/\r$//' ./gradlew
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-build-cache
