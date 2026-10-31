@@ -14,8 +14,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.pointerInput
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -83,7 +81,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.getInt
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.github.mikephil.charting.charts.PieChart
@@ -1025,7 +1022,7 @@ fun AddTransactionScreen(
                     trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Date") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .pointerInput(Unit) { detectTapGestures { showDatePicker() } },
+                        .clickable { showDatePicker() },
                     shape = FinanceShapes.Medium
                 )
                 OutlinedTextField(
@@ -1036,7 +1033,7 @@ fun AddTransactionScreen(
                     trailingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = "Time") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .pointerInput(Unit) { detectTapGestures { showTimePicker() } },
+                        .clickable { showTimePicker() },
                     shape = FinanceShapes.Medium
                 )
             }
@@ -1103,7 +1100,8 @@ fun TypeSelector(
             isSelected = selectedType == Transaction.Type.INCOME,
             selectedColor = FinanceColors.IncomeGreen,
             selectedContainerColor = FinanceColors.IncomeGreenContainer,
-            onClick = { onTypeChange(Transaction.Type.INCOME) }
+            onClick = { onTypeChange(Transaction.Type.INCOME) },
+            modifier = Modifier.weight(1f)
         )
         TypeButton(
             label = "Expense",
@@ -1111,7 +1109,8 @@ fun TypeSelector(
             isSelected = selectedType == Transaction.Type.EXPENSE,
             selectedColor = FinanceColors.ExpenseRed,
             selectedContainerColor = FinanceColors.ExpenseRedContainer,
-            onClick = { onTypeChange(Transaction.Type.EXPENSE) }
+            onClick = { onTypeChange(Transaction.Type.EXPENSE) },
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -1123,7 +1122,8 @@ fun TypeButton(
     isSelected: Boolean,
     selectedColor: Color,
     selectedContainerColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val colors = if (isSelected) {
         ButtonDefaults.buttonColors(
@@ -1139,8 +1139,7 @@ fun TypeButton(
 
     Button(
         onClick = onClick,
-        modifier = Modifier
-            .weight(1f)
+        modifier = modifier
             .height(56.dp),
         shape = FinanceShapes.Large,
         colors = colors,
@@ -1219,7 +1218,7 @@ fun DropdownContainer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp, bottom = 4.dp),
-        horizontalAlignment = Start
+        horizontalAlignment = Alignment.Start
     ) {
         categories.forEach { cat ->
             val isSelected = cat.name == selectedCategory
@@ -1319,12 +1318,14 @@ fun SettingsScreen() {
                     SettingsItem(
                         title = "Version",
                         subtitle = "1.0.0",
-                        leadingIcon = { Icon(Icons.Filled.Info, contentDescription = "") }
+                        leadingIcon = { Icon(Icons.Filled.Info, contentDescription = "") },
+                        onClick = {}
                     )
                     SettingsItem(
                         title = "FinancialLedger",
                         subtitle = "Modern personal finance tracker",
-                        leadingIcon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = "") }
+                        leadingIcon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = "") },
+                        onClick = {}
                     )
                 }
             }

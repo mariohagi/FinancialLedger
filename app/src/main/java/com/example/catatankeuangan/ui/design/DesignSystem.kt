@@ -15,7 +15,7 @@ import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Category as CategoryIcon
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -141,7 +141,7 @@ object CategoryIcons {
         "education", "learning", "school" -> School
         "gift", "gifts" -> CardGiftcard
         "transfer", "transfers" -> SwapHoriz
-        else -> Category
+        else -> CategoryIcon
     }
 }
 
