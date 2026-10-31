@@ -110,6 +110,10 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.ShowChart
 
+import com.example.catatankeuangan.ui.design.CategoryIcons
+import com.example.catatankeuangan.ui.design.FinanceDateFormatter
+import com.example.catatankeuangan.ui.design.FinanceFormatter
+
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -1328,6 +1332,11 @@ fun WalletSourceDropdownContainer(
                                 WalletSource.WALLET -> Icons.Filled.AccountBalanceWallet
                                 WalletSource.BANK -> Icons.Filled.AccountBalance
                                 WalletSource.STOCK_WALLET -> Icons.Filled.TrendingUp
+                                WalletSource.CRYPTO_WALLET -> Icons.Filled.CurrencyBitcoin
+                                WalletSource.SAVINGS -> Icons.Filled.Savings
+                                WalletSource.CREDIT_CARD -> Icons.Filled.CreditCard
+                                WalletSource.E_WALLET -> Icons.Filled.PhoneAndroid
+                                WalletSource.INVESTMENT -> Icons.Filled.ShowChart
                             },
                             contentDescription = source.displayName,
                             tint = iconColor,
