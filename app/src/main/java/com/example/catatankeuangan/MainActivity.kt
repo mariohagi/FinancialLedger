@@ -1642,6 +1642,7 @@ fun FinancialLedgerApp() {
                 )
             }
         },
+        modifier = Modifier,
         floatingActionButton = {
             when (currentRoute.value) {
                 "home", "transactions" -> FloatingActionButton(
