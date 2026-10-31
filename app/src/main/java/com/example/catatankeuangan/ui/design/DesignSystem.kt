@@ -128,7 +128,6 @@ object FinanceShapes {
 
 // Category Icons Mapping
 object CategoryIcons {
-    @Composable
     fun getIcon(categoryName: String): ImageVector = when (categoryName.lowercase()) {
         "food", "food & dining", "dining" -> Fastfood
         "transport", "transportation", "travel" -> DirectionsBus
@@ -167,4 +166,11 @@ object FinanceDateFormatter {
     fun formatDateTime(date: java.util.Date): String {
         return java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID")).format(date)
     }
+}
+
+// Typography helpers - use MaterialTheme.typography directly in composables
+// This object provides semantic names for common text styles
+object FinanceTypography {
+    // These are placeholder references - use MaterialTheme.typography.xxx in actual composables
+    // Kept for semantic naming consistency
 }

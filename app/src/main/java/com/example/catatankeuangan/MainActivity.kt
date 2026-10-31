@@ -1,4 +1,6 @@
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+@OptIn(ExperimentalFoundationApi::class)
 import android.os.Bundle
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -22,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -80,9 +81,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.getInt
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.getInt
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -209,7 +210,7 @@ fun FinancialLedgerApp(repo: FinanceRepository) {
             composable(
                 route = "add_transaction/{txId}"
             ) { backStackEntry ->
-                val txId = backStackEntry.getInt("txId")
+                val txId = getInt(backStackEntry, "txId")
                 AddTransactionScreen(repo, navController, txId)
             }
             composable("settings") { SettingsScreen() }
