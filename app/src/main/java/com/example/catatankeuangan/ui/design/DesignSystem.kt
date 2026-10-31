@@ -168,10 +168,3 @@ object FinanceDateFormatter {
         return java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID")).format(date)
     }
 }
-
-// Typography helpers - use MaterialTheme.typography directly in composables
-// This object provides semantic names for common text styles
-object FinanceTypography {
-    // These are placeholder references - use MaterialTheme.typography.xxx in actual composables
-    // Kept for semantic naming consistency
-}
