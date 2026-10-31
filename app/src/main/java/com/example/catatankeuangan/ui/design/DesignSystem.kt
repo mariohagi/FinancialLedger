@@ -3,7 +3,6 @@ package com.example.catatankeuangan.ui.design
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -170,21 +169,9 @@ object FinanceDateFormatter {
     }
 }
 
-// Typography System
+// Typography helpers - use MaterialTheme.typography directly in composables
+// This object provides semantic names for common text styles
 object FinanceTypography {
-    val DisplayLarge = androidx.compose.material3.Typography.Default.displayLarge
-    val DisplayMedium = androidx.compose.material3.Typography.Default.displayMedium
-    val DisplaySmall = androidx.compose.material3.Typography.Default.displaySmall
-    val HeadlineLarge = androidx.compose.material3.Typography.Default.headlineLarge
-    val HeadlineMedium = androidx.compose.material3.Typography.Default.headlineMedium
-    val HeadlineSmall = androidx.compose.material3.Typography.Default.headlineSmall
-    val TitleLarge = androidx.compose.material3.Typography.Default.titleLarge
-    val TitleMedium = androidx.compose.material3.Typography.Default.titleMedium
-    val TitleSmall = androidx.compose.material3.Typography.Default.titleSmall
-    val BodyLarge = androidx.compose.material3.Typography.Default.bodyLarge
-    val BodyMedium = androidx.compose.material3.Typography.Default.bodyMedium
-    val BodySmall = androidx.compose.material3.Typography.Default.bodySmall
-    val LabelLarge = androidx.compose.material3.Typography.Default.labelLarge
-    val LabelMedium = androidx.compose.material3.Typography.Default.labelMedium
-    val LabelSmall = androidx.compose.material3.Typography.Default.labelSmall
+    // These are placeholder references - use MaterialTheme.typography.xxx in actual composables
+    // Kept for semantic naming consistency
 }

@@ -1,4 +1,3 @@
-package com.example.catatankeuangan
 
 import android.os.Bundle
 import android.app.DatePickerDialog
@@ -9,17 +8,21 @@ import android.widget.TimePicker
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -79,6 +82,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.getInt
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -90,7 +94,6 @@ import com.example.catatankeuangan.ui.design.FinanceDateFormatter
 import com.example.catatankeuangan.ui.design.FinanceFormatter
 import com.example.catatankeuangan.ui.design.FinanceShapes
 import com.example.catatankeuangan.ui.design.FinanceSpacing
-import com.example.catatankeuangan.ui.design.FinanceTypography
 import com.example.catatankeuangan.ui.design.LightColorScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -103,13 +106,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Surface
 import java.text.NumberFormat
 import java.util.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
-
+import androidx.compose.ui.Alignment
 class MainActivity : ComponentActivity() {
     private lateinit var repo: FinanceRepository
 
@@ -133,21 +137,21 @@ fun FinancialLedgerTheme(
     val darkTheme = (configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val typography = Typography(
-        displayLarge = FinanceTypography.DisplayLarge.copy(fontWeight = FontWeight.W300),
-        displayMedium = FinanceTypography.DisplayMedium.copy(fontWeight = FontWeight.W300),
-        displaySmall = FinanceTypography.DisplaySmall.copy(fontWeight = FontWeight.W400),
-        headlineLarge = FinanceTypography.HeadlineLarge.copy(fontWeight = FontWeight.W600),
-        headlineMedium = FinanceTypography.HeadlineMedium.copy(fontWeight = FontWeight.W600),
-        headlineSmall = FinanceTypography.HeadlineSmall.copy(fontWeight = FontWeight.W600),
-        titleLarge = FinanceTypography.TitleLarge.copy(fontWeight = FontWeight.W600),
-        titleMedium = FinanceTypography.TitleMedium.copy(fontWeight = FontWeight.W500),
-        titleSmall = FinanceTypography.TitleSmall.copy(fontWeight = FontWeight.W500),
-        bodyLarge = FinanceTypography.BodyLarge.copy(fontWeight = FontWeight.W400),
-        bodyMedium = FinanceTypography.BodyMedium.copy(fontWeight = FontWeight.W400),
-        bodySmall = FinanceTypography.BodySmall.copy(fontWeight = FontWeight.W400),
-        labelLarge = FinanceTypography.LabelLarge.copy(fontWeight = FontWeight.W500),
-        labelMedium = FinanceTypography.LabelMedium.copy(fontWeight = FontWeight.W500),
-        labelSmall = FinanceTypography.LabelSmall.copy(fontWeight = FontWeight.W500),
+        displayLarge = MaterialTheme.typography.DisplayLarge.copy(fontWeight = FontWeight.W300),
+        displayMedium = MaterialTheme.typography.DisplayMedium.copy(fontWeight = FontWeight.W300),
+        displaySmall = MaterialTheme.typography.DisplaySmall.copy(fontWeight = FontWeight.W400),
+        headlineLarge = MaterialTheme.typography.HeadlineLarge.copy(fontWeight = FontWeight.W600),
+        headlineMedium = MaterialTheme.typography.HeadlineMedium.copy(fontWeight = FontWeight.W600),
+        headlineSmall = MaterialTheme.typography.HeadlineSmall.copy(fontWeight = FontWeight.W600),
+        titleLarge = MaterialTheme.typography.TitleLarge.copy(fontWeight = FontWeight.W600),
+        titleMedium = MaterialTheme.typography.TitleMedium.copy(fontWeight = FontWeight.W500),
+        titleSmall = MaterialTheme.typography.TitleSmall.copy(fontWeight = FontWeight.W500),
+        bodyLarge = MaterialTheme.typography.BodyLarge.copy(fontWeight = FontWeight.W400),
+        bodyMedium = MaterialTheme.typography.BodyMedium.copy(fontWeight = FontWeight.W400),
+        bodySmall = MaterialTheme.typography.BodySmall.copy(fontWeight = FontWeight.W400),
+        labelLarge = MaterialTheme.typography.LabelLarge.copy(fontWeight = FontWeight.W500),
+        labelMedium = MaterialTheme.typography.LabelMedium.copy(fontWeight = FontWeight.W500),
+        labelSmall = MaterialTheme.typography.LabelSmall.copy(fontWeight = FontWeight.W500),
     )
     val shapes = androidx.compose.material3.Shapes(
         extraSmall = FinanceShapes.ExtraSmall,
@@ -172,21 +176,21 @@ fun BottomNavBar(navController: NavHostController) {
         NavigationBarItem(
             selected = currentRoute == "home",
             onClick = { navController.navigate("home") },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            icon = { Icon(Icons.Filled.Home, contentDescription = null) },
             label = { Text("Home") },
             alwaysShowLabel = true
         )
         NavigationBarItem(
             selected = currentRoute == "transactions",
             onClick = { navController.navigate("transactions") },
-            icon = { Icon(Icons.Default.List, contentDescription = null) },
+            icon = { Icon(Icons.Filled.List, contentDescription = null) },
             label = { Text("Transactions") },
             alwaysShowLabel = true
         )
         NavigationBarItem(
             selected = currentRoute == "settings",
             onClick = { navController.navigate("settings") },
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
             label = { Text("Settings") },
             alwaysShowLabel = true
         )
@@ -273,7 +277,7 @@ fun GreetingHeader() {
                 .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(22.dp))
         ) {
             Icon(
-                Icons.Default.Settings,
+                Icons.Filled.Settings,
                 contentDescription = "Settings",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.align(Alignment.Center)
@@ -317,7 +321,7 @@ fun BalanceCard(balance: Double) {
                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f), RoundedCornerShape(28.dp))
                 ) {
                     Icon(
-                        Icons.Default.TrendingUp,
+                        Icons.Filled.TrendingUp,
                         contentDescription = "Trending",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.align(Alignment.Center)
@@ -357,7 +361,7 @@ fun QuickStat(label: String, value: String, trend: String, trendPositive: Boolea
         Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onPrimary)
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(
-                if (trendPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                if (trendPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
                 contentDescription = "",
                 tint = if (trendPositive) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed,
                 modifier = Modifier.size(12.dp)
@@ -376,7 +380,7 @@ fun SummaryRow(income: Double, expense: Double) {
         SummaryCard(
             label = "Income",
             amount = income,
-            icon = Icons.Default.TrendingUp,
+            icon = Icons.Filled.TrendingUp,
             iconColor = FinanceColors.IncomeGreen,
             containerColor = FinanceColors.IncomeGreenContainer,
             modifier = Modifier.weight(1f)
@@ -384,7 +388,7 @@ fun SummaryRow(income: Double, expense: Double) {
         SummaryCard(
             label = "Expense",
             amount = -expense,
-            icon = Icons.Default.TrendingDown,
+            icon = Icons.Filled.TrendingDown,
             iconColor = FinanceColors.ExpenseRed,
             containerColor = FinanceColors.ExpenseRedContainer,
             modifier = Modifier.weight(1f)
@@ -539,7 +543,7 @@ fun ChartCard(income: Double, expense: Double) {
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                Icons.Default.Analytics,
+                                Icons.Filled.TrendingUp,
                                 contentDescription = "No data",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                 modifier = Modifier.size(48.dp)
@@ -597,7 +601,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onSeeAll: () -> U
 
         if (transactions.isEmpty()) {
             EmptyStateCard(
-                icon = Icons.Default.Receipt,
+                icon = Icons.Filled.Receipt,
                 title = "No transactions yet",
                 subtitle = "Tap the + button to add your first transaction"
             )
@@ -748,7 +752,7 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Icon(
-                            Icons.Default.Receipt,
+                            Icons.Filled.Receipt,
                             contentDescription = "No transactions",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                             modifier = Modifier.size(64.dp)
@@ -792,7 +796,7 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                     .align(Alignment.BottomEnd)
                     .padding(24.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
+                Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
             }
         }
     }
@@ -952,7 +956,7 @@ fun AddTransactionScreen(
                 title = { Text(if (isEditing) "Edit Transaction" else "Add Transaction", fontWeight = FontWeight.W600) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
@@ -981,7 +985,7 @@ fun AddTransactionScreen(
                 onValueChange = { description = it },
                 label = { Text("Description") },
                 placeholder = { Text("e.g., Lunch, Salary, Shopping") },
-                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = "") },
+                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = FinanceShapes.Medium
@@ -1015,7 +1019,7 @@ fun AddTransactionScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Date") },
-                    trailingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Date") },
+                    trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Date") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .pointerInput(Unit) { detectTapGestures { showDatePicker() } },
@@ -1026,7 +1030,7 @@ fun AddTransactionScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Time") },
-                    trailingIcon = { Icon(Icons.Default.AccessTime, contentDescription = "Time") },
+                    trailingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = "Time") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .pointerInput(Unit) { detectTapGestures { showTimePicker() } },
@@ -1092,7 +1096,7 @@ fun TypeSelector(
     ) {
         TypeButton(
             label = "Income",
-            icon = Icons.Default.TrendingUp,
+            icon = Icons.Filled.TrendingUp,
             isSelected = selectedType == Transaction.Type.INCOME,
             selectedColor = FinanceColors.IncomeGreen,
             selectedContainerColor = FinanceColors.IncomeGreenContainer,
@@ -1100,7 +1104,7 @@ fun TypeSelector(
         )
         TypeButton(
             label = "Expense",
-            icon = Icons.Default.TrendingDown,
+            icon = Icons.Filled.TrendingDown,
             isSelected = selectedType == Transaction.Type.EXPENSE,
             selectedColor = FinanceColors.ExpenseRed,
             selectedContainerColor = FinanceColors.ExpenseRedContainer,
@@ -1170,7 +1174,7 @@ fun CategorySelector(
                 label = { Text("Category") },
                 trailingIcon = {
                     Icon(
-                        Icons.Default.ExpandMore,
+                        Icons.Filled.ExpandMore,
                         contentDescription = "Category",
                         tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1257,7 +1261,7 @@ fun DropdownContainer(
                 Spacer(modifier = Modifier.weight(1f))
                 if (isSelected) {
                     Icon(
-                        Icons.Default.Check,
+                        Icons.Filled.Check,
                         contentDescription = "Selected",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
@@ -1286,8 +1290,8 @@ fun SettingsScreen() {
                     SettingsItem(
                         title = "Theme",
                         subtitle = "Light, Dark, or System default",
-                        leadingIcon = { Icon(Icons.Default.Brightness6, contentDescription = "") },
-                        trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = "") },
+                        leadingIcon = { Icon(Icons.Filled.Brightness6, contentDescription = "") },
+                        trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
                         onClick = { }
                     )
                 }
@@ -1295,15 +1299,15 @@ fun SettingsScreen() {
                     SettingsItem(
                         title = "Export Data",
                         subtitle = "Export transactions to CSV",
-                        leadingIcon = { Icon(Icons.Default.FileDownload, contentDescription = "") },
-                        trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = "") },
+                        leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = "") },
+                        trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
                         onClick = { }
                     )
                     SettingsItem(
                         title = "Clear All Data",
                         subtitle = "Delete all transactions and categories",
-                        leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = "") },
-                        trailingIcon = { Icon(Icons.Default.ChevronRight, contentDescription = "") },
+                        leadingIcon = { Icon(Icons.Filled.DeleteForever, contentDescription = "") },
+                        trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
                         onClick = { },
                         isDestructive = true
                     )
@@ -1312,12 +1316,12 @@ fun SettingsScreen() {
                     SettingsItem(
                         title = "Version",
                         subtitle = "1.0.0",
-                        leadingIcon = { Icon(Icons.Default.Info, contentDescription = "") }
+                        leadingIcon = { Icon(Icons.Filled.Info, contentDescription = "") }
                     )
                     SettingsItem(
                         title = "FinancialLedger",
                         subtitle = "Modern personal finance tracker",
-                        leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "") }
+                        leadingIcon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = "") }
                     )
                 }
             }
