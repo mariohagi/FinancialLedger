@@ -63,15 +63,15 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,6 +92,9 @@ import com.example.catatankeuangan.ui.design.DarkColorScheme
 import com.example.catatankeuangan.ui.design.FinanceColors
 import com.example.catatankeuangan.ui.design.FinanceDateFormatter
 import com.example.catatankeuangan.ui.design.FinanceFormatter
+import com.example.catatankeuangan.Category
+import com.example.catatankeuangan.FinanceRepository
+import com.example.catatankeuangan.Transaction
 import com.example.catatankeuangan.ui.design.FinanceShapes
 import com.example.catatankeuangan.ui.design.FinanceSpacing
 import com.example.catatankeuangan.ui.design.LightColorScheme
@@ -103,17 +106,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Typography
 import androidx.compose.ui.Modifier.Companion
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Surface
 import java.text.NumberFormat
 import java.util.*
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.Alignment
 class MainActivity : ComponentActivity() {
     private lateinit var repo: FinanceRepository
 
