@@ -81,6 +81,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberScaffoldState
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.getBackStackEntry
+import androidx.navigation.toRoute
+import androidx.lifecycle.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.getBackStackEntry
@@ -1614,13 +1617,13 @@ fun FinancialLedgerApp() {
     val repo = FinanceRepository.getInstance(LocalContext.current)
     val navController = rememberNavController()
     
-    val backStackEntry by navController.getBackStackEntry(route = "home")
-    val currentRoute = backStackEntry?.destination?.route
+    val backStackEntry = navController.getBackStackEntry("home")
+    val currentRoute by backStackEntry.toRoute()?.collectAsStateWithLifecycle() ?: mutableStateOf("")
     
     Scaffold(
         bottomBar = {
             NavigationBar(
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 NavigationBarItem(
@@ -1663,7 +1666,7 @@ fun FinancialLedgerApp() {
                 route = "add_transaction/{txId}",
                 arguments = listOf(navArgument("txId") { type = NavType.IntType })
             ) { backStackEntry ->
-                val txId = backStackEntry.arguments?.getInt("txId") ?: -1
+                val txId = backStackEntry.getInt("txId") ?: -1
                 AddTransactionScreen(
                     repo = repo,
                     navController = navController,
