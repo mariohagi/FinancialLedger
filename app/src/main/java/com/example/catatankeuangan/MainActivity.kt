@@ -97,6 +97,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.PaddingValues
+import android.content.res.Configuration
+import com.example.catatankeuangan.ui.design.LightColorScheme
+import com.example.catatankeuangan.ui.design.DarkColorScheme
+import com.example.catatankeuangan.ui.design.FinanceShapes
+import com.example.catatankeuangan.ui.design.FinanceColors
+import androidx.compose.material.icons.filled.CurrencyBitcoin
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.ShowChart
+
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -259,34 +272,33 @@ fun BalanceCard(
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
-            Row(
+            Text("Balance Sources", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onPrimary)
+            Spacer(modifier = Modifier.height(12.dp))
+            androidx.compose.foundation.lazy.LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(0.dp)
             ) {
-                WalletSourceCard(
-                    label = "Wallet",
-                    amount = walletBalance,
-                    icon = Icons.Filled.AccountBalanceWallet,
-                    iconColor = FinanceColors.IncomeGreen,
-                    containerColor = FinanceColors.IncomeGreenContainer,
-                    modifier = Modifier.weight(1f)
-                )
-                WalletSourceCard(
-                    label = "Bank",
-                    amount = bankBalance,
-                    icon = Icons.Filled.AccountBalance,
-                    iconColor = FinanceColors.IncomeGreen,
-                    containerColor = FinanceColors.IncomeGreenContainer,
-                    modifier = Modifier.weight(1f)
-                )
-                WalletSourceCard(
-                    label = "Stock Wallet",
-                    amount = stockWalletBalance,
-                    icon = Icons.Filled.TrendingUp,
-                    iconColor = FinanceColors.IncomeGreen,
-                    containerColor = FinanceColors.IncomeGreenContainer,
-                    modifier = Modifier.weight(1f)
-                )
+                items(WalletSource.values()) { source ->
+                    val (balance, icon, iconColor, containerColor) = when (source) {
+                        WalletSource.WALLET -> walletBalance to Icons.Filled.AccountBalanceWallet to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                        WalletSource.BANK -> bankBalance to Icons.Filled.AccountBalance to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                        WalletSource.STOCK_WALLET -> stockWalletBalance to Icons.Filled.TrendingUp to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                        WalletSource.CRYPTO_WALLET -> 0.0 to Icons.Filled.CurrencyBitcoin to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                        WalletSource.SAVINGS -> 0.0 to Icons.Filled.Savings to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                        WalletSource.CREDIT_CARD -> 0.0 to Icons.Filled.CreditCard to FinanceColors.ExpenseRed to FinanceColors.ExpenseRedContainer
+                        WalletSource.E_WALLET -> 0.0 to Icons.Filled.PhoneAndroid to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                        WalletSource.INVESTMENT -> 0.0 to Icons.Filled.ShowChart to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                    }
+                    WalletSourceCard(
+                        label = source.displayName,
+                        amount = balance,
+                        icon = icon,
+                        iconColor = iconColor,
+                        containerColor = containerColor,
+                        modifier = Modifier.width(160.dp)
+                    )
+                }
             }
         }
     }
@@ -942,11 +954,13 @@ fun AddTransactionScreen(
             )
         }
     ) { innerPadding ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TypeSelector(
@@ -1601,13 +1615,31 @@ fun SettingsItem(
 
 @Composable
 fun FinancialLedgerApp() {
-    val repo = FinanceRepository.getInstance(LocalContext.current)
+    val context = LocalContext.current
+    val repo = FinanceRepository.getInstance(context)
     val navController = rememberNavController()
+    
+    // Read theme preference
+    val themePreference = rememberThemePreference(context)
+    val colorScheme = when (themePreference.value) {
+        0 -> LightColorScheme  // Light
+        1 -> DarkColorScheme   // Dark
+        else -> {              // System default - check system theme
+            val isSystemDark = LocalConfiguration.current.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            if (isSystemDark) DarkColorScheme else LightColorScheme
+        }
+    }
     
     // Get current route from back stack
     val currentRoute = remember { mutableStateOf("home") }
     
-    Scaffold(
+    MaterialTheme(
+        colorScheme = colorScheme,
+        shapes = FinanceShapes,
+        typography = MaterialTheme.typography,
+        content = {
+            Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -1674,6 +1706,7 @@ fun FinancialLedgerApp() {
             }
         }
     }
+}
 }
 
 public class MainActivity : ComponentActivity() {

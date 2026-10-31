@@ -13,4 +13,10 @@ class Converters {
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
     }
+
+    @TypeConverter
+    fun fromWalletSource(walletSource: WalletSource): String = walletSource.name
+
+    @TypeConverter
+    fun toWalletSource(value: String): WalletSource = WalletSource.valueOf(value)
 }
