@@ -209,7 +209,7 @@ fun FinancialLedgerApp(repo: FinanceRepository) {
             composable(
                 route = "add_transaction/{txId}"
             ) { backStackEntry ->
-                val txId = backStackEntry.getInt("txId"))
+                val txId = backStackEntry.getInt("txId")
                 AddTransactionScreen(repo, navController, txId)
             }
             composable("settings") { SettingsScreen() }
