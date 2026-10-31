@@ -1644,15 +1644,14 @@ fun FinancialLedgerApp() {
         },
         modifier = Modifier,
         floatingActionButton = {
-            when (currentRoute.value) {
-                "home", "transactions" -> FloatingActionButton(
+            if (currentRoute.value == "home" || currentRoute.value == "transactions") {
+                FloatingActionButton(
                     onClick = { navController.navigate("add_transaction/-1") },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
                 }
-                else -> Box()
             }
         }
     ) { innerPadding ->
