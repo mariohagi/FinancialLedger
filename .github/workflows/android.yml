@@ -41,8 +41,10 @@ jobs:
           gradle-version: '8.5'
           validate-wrappers: false
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Make gradlew and gradle executable
+        run: |
+          chmod +x ./gradlew
+          chmod +x ./gradle/wrapper/gradle-8.5/bin/gradle
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-build-cache
