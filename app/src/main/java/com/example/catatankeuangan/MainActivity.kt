@@ -84,7 +84,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.navArgument
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -99,11 +98,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.navArgument
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -129,7 +123,6 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.Modifier.Companion
 import java.text.NumberFormat
 import java.util.*
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import android.content.pm.PackageManager
 import android.os.Build
