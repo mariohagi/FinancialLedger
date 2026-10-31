@@ -114,18 +114,10 @@ import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import com.example.catatankeuangan.ui.design.CategoryIcons
-import com.example.catatankeuangan.ui.design.DarkColorScheme
-import com.example.catatankeuangan.ui.design.FinanceColors
-import com.example.catatankeuangan.ui.design.FinanceDateFormatter
-import com.example.catatankeuangan.ui.design.FinanceFormatter
 import com.example.catatankeuangan.Category
 import com.example.catatankeuangan.FinanceRepository
 import com.example.catatankeuangan.Transaction
 import com.example.catatankeuangan.WalletSource
-import com.example.catatankeuangan.ui.design.FinanceShapes
-import com.example.catatankeuangan.ui.design.FinanceSpacing
-import com.example.catatankeuangan.ui.design.LightColorScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
@@ -280,15 +272,59 @@ fun BalanceCard(
                 contentPadding = PaddingValues(0.dp)
             ) {
                 items(WalletSource.values()) { source ->
-                    val (balance, icon, iconColor, containerColor) = when (source) {
-                        WalletSource.WALLET -> walletBalance to Icons.Filled.AccountBalanceWallet to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
-                        WalletSource.BANK -> bankBalance to Icons.Filled.AccountBalance to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
-                        WalletSource.STOCK_WALLET -> stockWalletBalance to Icons.Filled.TrendingUp to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
-                        WalletSource.CRYPTO_WALLET -> 0.0 to Icons.Filled.CurrencyBitcoin to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
-                        WalletSource.SAVINGS -> 0.0 to Icons.Filled.Savings to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
-                        WalletSource.CREDIT_CARD -> 0.0 to Icons.Filled.CreditCard to FinanceColors.ExpenseRed to FinanceColors.ExpenseRedContainer
-                        WalletSource.E_WALLET -> 0.0 to Icons.Filled.PhoneAndroid to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
-                        WalletSource.INVESTMENT -> 0.0 to Icons.Filled.ShowChart to FinanceColors.IncomeGreen to FinanceColors.IncomeGreenContainer
+                    val balance: Double
+                    val icon: androidx.compose.ui.graphics.vector.ImageVector
+                    val iconColor: Color
+                    val containerColor: Color
+                    when (source) {
+                        WalletSource.WALLET -> {
+                            balance = walletBalance
+                            icon = Icons.Filled.AccountBalanceWallet
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
+                        WalletSource.BANK -> {
+                            balance = bankBalance
+                            icon = Icons.Filled.AccountBalance
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
+                        WalletSource.STOCK_WALLET -> {
+                            balance = stockWalletBalance
+                            icon = Icons.Filled.TrendingUp
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
+                        WalletSource.CRYPTO_WALLET -> {
+                            balance = 0.0
+                            icon = Icons.Filled.CurrencyBitcoin
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
+                        WalletSource.SAVINGS -> {
+                            balance = 0.0
+                            icon = Icons.Filled.Savings
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
+                        WalletSource.CREDIT_CARD -> {
+                            balance = 0.0
+                            icon = Icons.Filled.CreditCard
+                            iconColor = FinanceColors.ExpenseRed
+                            containerColor = FinanceColors.ExpenseRedContainer
+                        }
+                        WalletSource.E_WALLET -> {
+                            balance = 0.0
+                            icon = Icons.Filled.PhoneAndroid
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
+                        WalletSource.INVESTMENT -> {
+                            balance = 0.0
+                            icon = Icons.Filled.ShowChart
+                            iconColor = FinanceColors.IncomeGreen
+                            containerColor = FinanceColors.IncomeGreenContainer
+                        }
                     }
                     WalletSourceCard(
                         label = source.displayName,
@@ -1635,7 +1671,6 @@ fun FinancialLedgerApp() {
     
     MaterialTheme(
         colorScheme = colorScheme,
-        shapes = FinanceShapes,
         typography = MaterialTheme.typography,
         content = {
             Scaffold(
