@@ -115,6 +115,22 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Typography
 import androidx.compose.ui.Modifier.Companion
 import androidx.compose.material3.Surface
+import androidx.compose.material3.BottomNavigation
+import androidx.compose.material3.BottomNavigationItem
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.getBackStackEntry
+import androidx.navigation.compose.navArgument
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.compose.runtime.LocalContext
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Surface
 import java.text.NumberFormat
 import java.util.*
 import androidx.compose.ui.unit.sp
@@ -124,7 +140,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(repo: FinanceRepository) {
+fun HomeScreen(repo: FinanceRepository, onAddTransaction: () -> Unit = {}) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     val income = allTransactions.filter { it.type == Transaction.Type.INCOME }.sumOf { it.amount }
     val expense = allTransactions.filter { it.type == Transaction.Type.EXPENSE }.sumOf { it.amount }
@@ -697,7 +713,7 @@ fun TransactionItem(tx: Transaction) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController) {
+fun TransactionsScreen(repo: FinanceRepository, onAddTransaction: () -> Unit) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
@@ -758,7 +774,7 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
             }
 
             FloatingActionButton(
-                onClick = { navController.navigate("add_transaction/-1") },
+                onClick = onAddTransaction,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
@@ -1589,6 +1605,78 @@ fun SettingsItem(
                 }
             }
             trailingIcon()
+        }
+    }
+}
+
+
+
+@Composable
+fun FinancialLedgerApp() {
+    val repo = FinanceRepository.getInstance(LocalContext.current)
+    val navController = rememberNavController()
+    val scaffoldState = rememberScaffoldState()
+    val scope = rememberCoroutineScope()
+    
+    Scaffold(
+        scaffoldState = scaffoldState,
+        bottomBar = {
+            BottomNavigation(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                val navBackStackEntry by navController.getBackStackEntry(route = "home")
+                val currentRoute = navBackStackEntry?.destination?.route
+                
+                BottomNavigationItem(
+                    selected = currentRoute == "home",
+                    onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true }; launchSingleTop = true; restoreState = true } },
+                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                    label = { Text("Home") }
+                )
+                BottomNavigationItem(
+                    selected = currentRoute == "transactions",
+                    onClick = { navController.navigate("transactions") { popUpTo("transactions") { inclusive = true }; launchSingleTop = true; restoreState = true } },
+                    icon = { Icon(Icons.Filled.ReceiptLong, contentDescription = "Transactions") },
+                    label = { Text("Transactions") }
+                )
+                BottomNavigationItem(
+                    selected = currentRoute == "settings",
+                    onClick = { navController.navigate("settings") { popUpTo("settings") { inclusive = true }; launchSingleTop = true; restoreState = true } },
+                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+                    label = { Text("Settings") }
+                )
+            }
+        },
+        floatingActionButton = {
+            when (currentRoute) {
+                "home", "transactions" -> FloatingActionButton(
+                    onClick = onAddTransaction,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
+                }
+                else -> Box()
+            }
+        }
+    ) { innerPadding ->
+        NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
+            composable("home") { HomeScreen(repo = repo, onAddTransaction = { navController.navigate("add_transaction/-1") }) }
+            composable("transactions") { TransactionsScreen(repo = repo, onAddTransaction = { navController.navigate("add_transaction/-1") }) }
+            composable(
+                route = "add_transaction/{txId}",
+                arguments = listOf(navArgument("txId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val txId = backStackEntry.arguments?.getInt("txId") ?: -1
+                AddTransactionScreen(
+                    repo = repo,
+                    txId = txId,
+                    onSave = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
+            composable("settings") { SettingsScreen(repo = repo) }
         }
     }
 }
