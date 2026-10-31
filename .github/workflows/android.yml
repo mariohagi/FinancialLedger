@@ -39,8 +39,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Make gradle wrapper executable
+        run: |
+          chmod +x ./gradlew
+          chmod +x ./gradle/wrapper/gradle-8.5/bin/gradle
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
