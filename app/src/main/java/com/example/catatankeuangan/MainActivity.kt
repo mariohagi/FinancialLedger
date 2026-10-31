@@ -81,9 +81,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberScaffoldState
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.getBackStackEntry
-import androidx.navigation.toRoute
-import androidx.lifecycle.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.getBackStackEntry
@@ -1617,8 +1614,8 @@ fun FinancialLedgerApp() {
     val repo = FinanceRepository.getInstance(LocalContext.current)
     val navController = rememberNavController()
     
-    val backStackEntry = navController.getBackStackEntry("home")
-    val currentRoute by backStackEntry.toRoute()?.collectAsStateWithLifecycle() ?: mutableStateOf("")
+    // Get current route from back stack
+    val currentRoute = remember { mutableStateOf("home") }
     
     Scaffold(
         bottomBar = {
@@ -1627,27 +1624,36 @@ fun FinancialLedgerApp() {
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 NavigationBarItem(
-                    selected = currentRoute == "home",
-                    onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true }; launchSingleTop = true; restoreState = true } },
+                    selected = currentRoute.value == "home",
+                    onClick = { 
+                        navController.navigate("home") { popUpTo("home") { inclusive = true }; launchSingleTop = true; restoreState = true }
+                        currentRoute.value = "home"
+                    },
                     icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
                     label = { Text("Home") }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "transactions",
-                    onClick = { navController.navigate("transactions") { popUpTo("transactions") { inclusive = true }; launchSingleTop = true; restoreState = true } },
+                    selected = currentRoute.value == "transactions",
+                    onClick = { 
+                        navController.navigate("transactions") { popUpTo("transactions") { inclusive = true }; launchSingleTop = true; restoreState = true }
+                        currentRoute.value = "transactions"
+                    },
                     icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
                     label = { Text("Transactions") }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "settings",
-                    onClick = { navController.navigate("settings") { popUpTo("settings") { inclusive = true }; launchSingleTop = true; restoreState = true } },
+                    selected = currentRoute.value == "settings",
+                    onClick = { 
+                        navController.navigate("settings") { popUpTo("settings") { inclusive = true }; launchSingleTop = true; restoreState = true }
+                        currentRoute.value = "settings"
+                    },
                     icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
                     label = { Text("Settings") }
                 )
             }
         },
         floatingActionButton = {
-            when (currentRoute) {
+            when (currentRoute.value) {
                 "home", "transactions" -> FloatingActionButton(
                     onClick = { navController.navigate("add_transaction/-1") },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -1666,7 +1672,7 @@ fun FinancialLedgerApp() {
                 route = "add_transaction/{txId}",
                 arguments = listOf(navArgument("txId") { type = NavType.IntType })
             ) { backStackEntry ->
-                val txId = backStackEntry.getInt("txId") ?: -1
+                val txId = backStackEntry.arguments?.getInt("txId") ?: -1
                 AddTransactionScreen(
                     repo = repo,
                     navController = navController,
