@@ -1,7 +1,6 @@
-package com.example.catatankeuangan
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-@OptIn(ExperimentalFoundationApi::class)
+package com.example.catatankeuangan
 
 
 import android.os.Bundle
@@ -117,6 +116,7 @@ import java.text.NumberFormat
 import java.util.*
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
+
 class MainActivity : ComponentActivity() {
     private lateinit var repo: FinanceRepository
 
