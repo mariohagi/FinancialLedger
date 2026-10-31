@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
+import androidx.navigation.getInt
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -210,7 +211,7 @@ fun FinancialLedgerApp(repo: FinanceRepository) {
             composable(
                 route = "add_transaction/{txId}"
             ) { backStackEntry ->
-                val txId = getInt(backStackEntry, "txId")
+                val txId = backStackEntry.getInt("txId")
                 AddTransactionScreen(repo, navController, txId)
             }
             composable("settings") { SettingsScreen() }

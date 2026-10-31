@@ -3,19 +3,7 @@ package com.example.catatankeuangan.ui.design
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.filled.Fastfood
-import androidx.compose.material.icons.filled.DirectionsBus
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.VideogameAsset
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.LaptopMac
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.CardGiftcard
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.Category as CategoryIcon
+import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -129,19 +117,19 @@ object FinanceShapes {
 // Category Icons Mapping
 object CategoryIcons {
     fun getIcon(categoryName: String): ImageVector = when (categoryName.lowercase()) {
-        "food", "food & dining", "dining" -> Fastfood
-        "transport", "transportation", "travel" -> DirectionsBus
-        "shopping", "shop" -> ShoppingBag
-        "entertainment", "fun", "games" -> VideogameAsset
-        "salary", "income", "work" -> Work
-        "freelance", "freelancer" -> LaptopMac
-        "investment", "invest", "stocks" -> TrendingUp
-        "bills", "utilities", "electricity", "water" -> Receipt
-        "health", "medical", "healthcare" -> LocalHospital
-        "education", "learning", "school" -> School
-        "gift", "gifts" -> CardGiftcard
-        "transfer", "transfers" -> SwapHoriz
-        else -> CategoryIcon
+        "food", "food & dining", "dining" -> Icons.Filled.Fastfood
+        "transport", "transportation", "travel" -> Icons.Filled.DirectionsBus
+        "shopping", "shop" -> Icons.Filled.ShoppingBag
+        "entertainment", "fun", "games" -> Icons.Filled.VideogameAsset
+        "salary", "income", "work" -> Icons.Filled.Work
+        "freelance", "freelancer" -> Icons.Filled.LaptopMac
+        "investment", "invest", "stocks" -> Icons.Filled.TrendingUp
+        "bills", "utilities", "electricity", "water" -> Icons.Filled.Receipt
+        "health", "medical", "healthcare" -> Icons.Filled.LocalHospital
+        "education", "learning", "school" -> Icons.Filled.School
+        "gift", "gifts" -> Icons.Filled.CardGiftcard
+        "transfer", "transfers" -> Icons.Filled.SwapHoriz
+        else -> Icons.Filled.Category
     }
 }
 
