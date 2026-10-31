@@ -9,9 +9,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.pointerInput
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -136,21 +136,21 @@ fun FinancialLedgerTheme(
     val darkTheme = (configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val typography = Typography(
-        displayLarge = MaterialTheme.typography.DisplayLarge.copy(fontWeight = FontWeight.W300),
-        displayMedium = MaterialTheme.typography.DisplayMedium.copy(fontWeight = FontWeight.W300),
-        displaySmall = MaterialTheme.typography.DisplaySmall.copy(fontWeight = FontWeight.W400),
-        headlineLarge = MaterialTheme.typography.HeadlineLarge.copy(fontWeight = FontWeight.W600),
-        headlineMedium = MaterialTheme.typography.HeadlineMedium.copy(fontWeight = FontWeight.W600),
-        headlineSmall = MaterialTheme.typography.HeadlineSmall.copy(fontWeight = FontWeight.W600),
-        titleLarge = MaterialTheme.typography.TitleLarge.copy(fontWeight = FontWeight.W600),
-        titleMedium = MaterialTheme.typography.TitleMedium.copy(fontWeight = FontWeight.W500),
-        titleSmall = MaterialTheme.typography.TitleSmall.copy(fontWeight = FontWeight.W500),
-        bodyLarge = MaterialTheme.typography.BodyLarge.copy(fontWeight = FontWeight.W400),
-        bodyMedium = MaterialTheme.typography.BodyMedium.copy(fontWeight = FontWeight.W400),
-        bodySmall = MaterialTheme.typography.BodySmall.copy(fontWeight = FontWeight.W400),
-        labelLarge = MaterialTheme.typography.LabelLarge.copy(fontWeight = FontWeight.W500),
-        labelMedium = MaterialTheme.typography.LabelMedium.copy(fontWeight = FontWeight.W500),
-        labelSmall = MaterialTheme.typography.LabelSmall.copy(fontWeight = FontWeight.W500),
+        displayLarge = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.W300),
+        displayMedium = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.W300),
+        displaySmall = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.W400),
+        headlineLarge = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.W600),
+        headlineMedium = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.W600),
+        headlineSmall = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.W600),
+        titleLarge = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.W600),
+        titleMedium = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.W500),
+        titleSmall = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.W500),
+        bodyLarge = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.W400),
+        bodyMedium = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.W400),
+        bodySmall = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.W400),
+        labelLarge = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.W500),
+        labelMedium = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.W500),
+        labelSmall = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.W500),
     )
     val shapes = androidx.compose.material3.Shapes(
         extraSmall = FinanceShapes.ExtraSmall,
@@ -209,7 +209,7 @@ fun FinancialLedgerApp(repo: FinanceRepository) {
             composable(
                 route = "add_transaction/{txId}"
             ) { backStackEntry ->
-                val txId = androidx.navigation.getInt(backStackEntry, "txId")
+                val txId = backStackEntry.getInt("txId"))
                 AddTransactionScreen(repo, navController, txId)
             }
             composable("settings") { SettingsScreen() }
@@ -1147,7 +1147,7 @@ fun TypeButton(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(icon, contentDescription = "", modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
@@ -1368,11 +1368,11 @@ fun SettingsItem(
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier.size(40.dp),
