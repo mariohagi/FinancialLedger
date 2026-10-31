@@ -25,28 +25,18 @@ jobs:
           packages: platform-tools platforms;android-34 build-tools;34.0.0
           accept-android-sdk-licenses: true
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
+
       - name: Make gradle wrapper executable
         run: |
           chmod +x ./gradlew
           chmod +x ./gradle/wrapper/gradle-8.5/bin/gradle
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug
-
+      - name: Build debug APK (no cache)
+        run: ./gradlew :app:assembleDebug --no-build-cache
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
