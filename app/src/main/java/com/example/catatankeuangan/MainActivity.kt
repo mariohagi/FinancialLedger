@@ -81,7 +81,6 @@ import androidx.compose.material3.Text
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.navArgument
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.*
@@ -1660,8 +1659,7 @@ fun FinancialLedgerApp() {
             composable("home") { HomeScreen(repo = repo) }
             composable("transactions") { TransactionsScreen(repo = repo, navController = navController) }
             composable(
-                route = "add_transaction/{txId}",
-                arguments = listOf(navArgument("txId") { type = NavType.IntType })
+                route = "add_transaction/{txId}"
             ) { backStackEntry ->
                 val txId = backStackEntry.arguments?.getInt("txId") ?: -1
                 AddTransactionScreen(
