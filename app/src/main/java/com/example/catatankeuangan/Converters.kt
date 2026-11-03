@@ -19,4 +19,10 @@ class Converters {
 
     @TypeConverter
     fun toWalletSource(value: String): WalletSource = WalletSource.valueOf(value)
+
+    @TypeConverter
+    fun fromWalletType(walletType: WalletType): String = walletType.name
+
+    @TypeConverter
+    fun toWalletType(value: String): WalletType = WalletType.valueOf(value)
 }

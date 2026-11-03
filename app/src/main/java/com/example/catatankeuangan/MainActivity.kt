@@ -121,13 +121,17 @@ import com.github.mikephil.charting.data.PieEntry
 import com.example.catatankeuangan.Category
 import com.example.catatankeuangan.FinanceRepository
 import com.example.catatankeuangan.Transaction
+import com.example.catatankeuangan.Wallet
 import com.example.catatankeuangan.WalletSource
+import com.example.catatankeuangan.WalletType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Typography
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.Modifier.Companion
 import java.text.NumberFormat
 import java.util.*
@@ -800,7 +804,7 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 16.dp, vertical = 16.dp)
-                        .padding(bottom = 100.dp),
+                        .padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(allTransactions.reversed()) { tx ->
@@ -811,17 +815,6 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                         )
                     }
                 }
-            }
-
-            FloatingActionButton(
-                onClick = { navController.navigate("add_transaction/-1") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(24.dp)
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
             }
         }
     }
@@ -1232,14 +1225,70 @@ fun CategorySelector(
         }
 
         if (expanded) {
-            DropdownContainer(
-                categories = categories,
-                selectedCategory = selectedCategory,
-                onCategoryClick = { catName ->
-                    onCategoryChange(catName)
-                    expanded = false
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Categories", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    onClick = { }
+                )
+                categories.forEach { cat ->
+                    val isSelected = cat.name == selectedCategory
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(40.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(iconBgColor, RoundedCornerShape(20.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            CategoryIcons.getIcon(cat.name),
+                                            contentDescription = cat.name,
+                                            tint = iconColor,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    cat.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Filled.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        },
+                        onClick = {
+                            onCategoryChange(cat.name)
+                            expanded = false
+                        },
+                        leadingIcon = { }
+                    )
                 }
-            )
+            }
         }
     }
 }
@@ -1280,170 +1329,96 @@ fun WalletSourceSelector(
         }
 
         if (expanded) {
-            WalletSourceDropdownContainer(
-                selectedWalletSource = selectedWalletSource,
-                onWalletSourceClick = { source ->
-                    onWalletSourceChange(source)
-                    expanded = false
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun WalletSourceDropdownContainer(
-    selectedWalletSource: WalletSource,
-    onWalletSourceClick: (WalletSource) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
-        WalletSource.values().forEach { source ->
-            val isSelected = source == selectedWalletSource
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else Color.Transparent,
-                        FinanceShapes.Medium
-                    )
-                    .clickable { onWalletSourceClick(source) }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Box(
-                    modifier = Modifier.size(40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(iconBgColor, RoundedCornerShape(20.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            when (source) {
-                                WalletSource.WALLET -> Icons.Filled.AccountBalanceWallet
-                                WalletSource.BANK -> Icons.Filled.AccountBalance
-                                WalletSource.STOCK_WALLET -> Icons.Filled.TrendingUp
-                                WalletSource.CRYPTO_WALLET -> Icons.Filled.CurrencyBitcoin
-                                WalletSource.SAVINGS -> Icons.Filled.Savings
-                                WalletSource.CREDIT_CARD -> Icons.Filled.CreditCard
-                                WalletSource.E_WALLET -> Icons.Filled.PhoneAndroid
-                                WalletSource.INVESTMENT -> Icons.Filled.ShowChart
-                            },
-                            contentDescription = source.displayName,
-                            tint = iconColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    source.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                DropdownMenuItem(
+                    text = { Text("Wallet Sources", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    onClick = { }
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                if (isSelected) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                WalletSource.values().forEach { source ->
+                    val isSelected = source == selectedWalletSource
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(40.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(iconBgColor, RoundedCornerShape(20.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            when (source) {
+                                                WalletSource.WALLET -> Icons.Filled.AccountBalanceWallet
+                                                WalletSource.BANK -> Icons.Filled.AccountBalance
+                                                WalletSource.STOCK_WALLET -> Icons.Filled.TrendingUp
+                                                WalletSource.CRYPTO_WALLET -> Icons.Filled.CurrencyBitcoin
+                                                WalletSource.SAVINGS -> Icons.Filled.Savings
+                                                WalletSource.CREDIT_CARD -> Icons.Filled.CreditCard
+                                                WalletSource.E_WALLET -> Icons.Filled.PhoneAndroid
+                                                WalletSource.INVESTMENT -> Icons.Filled.ShowChart
+                                            },
+                                            contentDescription = source.displayName,
+                                            tint = iconColor,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    source.displayName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Filled.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        },
+                        onClick = {
+                            onWalletSourceChange(source)
+                            expanded = false
+                        },
+                        leadingIcon = { }
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun DropdownContainer(
-    categories: List<Category>,
-    selectedCategory: String,
-    onCategoryClick: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
-        categories.forEach { cat ->
-            val isSelected = cat.name == selectedCategory
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else Color.Transparent,
-                        FinanceShapes.Medium
-                    )
-                    .clickable { onCategoryClick(cat.name) }
-            ) {
-                Box(
-                    modifier = Modifier.size(40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(iconBgColor, RoundedCornerShape(20.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            CategoryIcons.getIcon(cat.name),
-                            contentDescription = cat.name,
-                            tint = iconColor,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    cat.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                if (isSelected) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
             }
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsScreen(repo: FinanceRepository, shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>) {
-    val context = LocalContext.current
-    val themePreference = rememberThemePreference(context)
-    val scope = rememberCoroutineScope()
+            @OptIn(ExperimentalMaterial3Api::class)
+            @Composable
+            fun SettingsScreen(repo: FinanceRepository, shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>) {
+                val context = LocalContext.current
+                val themePreference = rememberThemePreference(context)
+                val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = FinanceShapes.Large,
@@ -1664,7 +1639,7 @@ fun FinancialLedgerApp() {
     val repo = FinanceRepository.getInstance(context)
     val navController = rememberNavController()
     
-    // Read theme preference
+    // Read theme preference and apply to MaterialTheme
     val themePreference = rememberThemePreference(context)
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme  // Light
