@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -107,7 +108,18 @@ import com.example.catatankeuangan.ui.design.LightColorScheme
 import com.example.catatankeuangan.ui.design.DarkColorScheme
 import com.example.catatankeuangan.ui.design.FinanceShapes
 import com.example.catatankeuangan.ui.design.FinanceColors
+import com.example.catatankeuangan.ui.design.LocalCurrency
+import com.example.catatankeuangan.ui.design.formatAmountDisplay
+import com.example.catatankeuangan.CurrencyPreference
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CurrencyBitcoin
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.PhoneAndroid
@@ -703,13 +715,45 @@ fun TransactionItem(tx: Transaction) {
 }
 
 // =====================================================================
-// TRANSACTIONS SCREEN
+// TRANSACTIONS SCREEN — Task 4: Monthly navigation bar
 // =====================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
+
+    // Build sorted list of (year, month) pairs present in data + current month
+    val now = remember { java.util.Calendar.getInstance() }
+    val currentYear  = now.get(java.util.Calendar.YEAR)
+    val currentMonth = now.get(java.util.Calendar.MONTH) + 1 // 1-based
+
+    // Derive months from transactions, always include current month
+    val availableMonths = remember(allTransactions) {
+        val months = mutableSetOf(Pair(currentYear, currentMonth))
+        allTransactions.forEach { tx ->
+            val cal = java.util.Calendar.getInstance().apply { time = tx.date }
+            months.add(Pair(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1))
+        }
+        months.sortedWith(compareBy({ it.first }, { it.second }))
+    }
+
+    var selectedYear  by remember { mutableStateOf(currentYear) }
+    var selectedMonth by remember { mutableStateOf(currentMonth) }
+
+    val monthlyTransactions by repo.getTransactionsByYearMonth(selectedYear, selectedMonth)
+        .collectAsState(initial = emptyList())
+
+    val monthIncome  = monthlyTransactions.filter { it.type == Transaction.Type.INCOME }.sumOf { it.amount }
+    val monthExpense = monthlyTransactions.filter { it.type == Transaction.Type.EXPENSE }.sumOf { it.amount }
+
+    val monthListState = rememberLazyListState()
+
+    // Scroll to selected month chip on first load
+    LaunchedEffect(availableMonths, selectedYear, selectedMonth) {
+        val idx = availableMonths.indexOfFirst { it.first == selectedYear && it.second == selectedMonth }
+        if (idx >= 0) monthListState.animateScrollToItem(idx)
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -720,8 +764,85 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
             )
         )
 
+        // Month selector bar
+        LazyRow(
+            state = monthListState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(availableMonths) { (year, month) ->
+                val isSelected = year == selectedYear && month == selectedMonth
+                Surface(
+                    onClick = { selectedYear = year; selectedMonth = month },
+                    shape = FinanceShapes.Full,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            FinanceDateFormatter.formatMonthYear(year, month - 1),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isSelected) FontWeight.W700 else FontWeight.W400,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        // Monthly summary row
+        if (monthlyTransactions.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val currency = LocalCurrency.current
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = FinanceShapes.Medium,
+                    color = FinanceColors.IncomeGreenContainer
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Income", style = MaterialTheme.typography.labelSmall, color = FinanceColors.IncomeGreen)
+                        Text(
+                            FinanceFormatter.format(monthIncome, currency),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.W700,
+                            color = FinanceColors.IncomeGreen
+                        )
+                    }
+                }
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = FinanceShapes.Medium,
+                    color = FinanceColors.ExpenseRedContainer
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Expense", style = MaterialTheme.typography.labelSmall, color = FinanceColors.ExpenseRed)
+                        Text(
+                            FinanceFormatter.format(-monthExpense, currency),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.W700,
+                            color = FinanceColors.ExpenseRed
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
-            if (allTransactions.isEmpty()) {
+            if (monthlyTransactions.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -737,12 +858,12 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                             modifier = Modifier.size(64.dp)
                         )
                         Text(
-                            "No transactions yet",
+                            "No transactions this month",
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Start tracking your finances by adding a transaction",
+                            "Tap + to add a transaction",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -753,11 +874,11 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 16.dp)
-                        .padding(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
                 ) {
-                    items(allTransactions.reversed()) { tx ->
+                    items(monthlyTransactions) { tx ->
                         TransactionItemWithActions(
                             tx = tx,
                             onEdit = { navController.navigate("add_transaction/${tx.id}") },
@@ -894,6 +1015,13 @@ fun AddTransactionScreen(
     var isInitialized by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
 
+    // Task 7: amount display with thousands separator; amountStr holds raw digits
+    var amountDisplay by remember { mutableStateOf("") }
+
+    // Task 5: description autocomplete
+    var descSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var showSuggestions by remember { mutableStateOf(false) }
+
     // Load existing transaction data when editing
     LaunchedEffect(allTransactions, isEditing, txId, wallets, categories) {
         if (isEditing && !isInitialized && allTransactions.isNotEmpty()) {
@@ -901,6 +1029,8 @@ fun AddTransactionScreen(
             if (tx != null) {
                 description = tx.description
                 amountStr = Math.abs(tx.amount).toLong().toString()
+                val (disp, _) = formatAmountDisplay(amountStr)
+                amountDisplay = disp
                 type = tx.type
                 category = tx.category
                 walletSource = tx.walletSource
@@ -996,7 +1126,17 @@ fun AddTransactionScreen(
 
             OutlinedTextField(
                 value = description,
-                onValueChange = { description = it },
+                onValueChange = { v ->
+                    description = v
+                    showSuggestions = v.isNotBlank()
+                    if (v.isNotBlank()) {
+                        scope.launch {
+                            descSuggestions = repo.getDescriptionSuggestions(v)
+                        }
+                    } else {
+                        descSuggestions = emptyList()
+                    }
+                },
                 label = { Text("Description") },
                 placeholder = { Text("e.g., Lunch, Salary, Shopping") },
                 leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "") },
@@ -1004,14 +1144,64 @@ fun AddTransactionScreen(
                 singleLine = true,
                 shape = FinanceShapes.Medium
             )
+            // Task 5: Autocomplete suggestions
+            if (showSuggestions && descSuggestions.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = FinanceShapes.Medium,
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column {
+                        descSuggestions.forEach { suggestion ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        description = suggestion
+                                        showSuggestions = false
+                                        descSuggestions = emptyList()
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Receipt,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    suggestion,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            if (suggestion != descSuggestions.last()) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                        }
+                    }
+                }
+            }
 
+            // Task 7: thousands-separator formatted amount field
             OutlinedTextField(
-                value = amountStr,
-                onValueChange = { amountStr = it.filter { c -> c.isDigit() } },
-                label = { Text("Amount (IDR)") },
+                value = amountDisplay,
+                onValueChange = { raw ->
+                    val (disp, digits) = formatAmountDisplay(raw)
+                    amountDisplay = disp
+                    amountStr = digits
+                },
+                label = { Text("Amount") },
                 placeholder = { Text("0") },
                 leadingIcon = {
-                    Text("Rp", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        LocalCurrency.current.symbol,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.W600,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -1434,7 +1624,8 @@ fun WalletSourceSelector(
 fun SettingsScreen(
     repo: FinanceRepository,
     shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
-    themePreference: MutableState<Int>
+    themePreference: MutableState<Int>,
+    currency: MutableState<com.example.catatankeuangan.CurrencyInfo>
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1529,6 +1720,93 @@ fun SettingsScreen(
             }
         }
 
+        // Task 8: Currency Selection
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
+                SettingsSection(title = "General") {
+                    var showCurrencyDialog by remember { mutableStateOf(false) }
+                    SettingsItem(
+                        title = "Currency",
+                        subtitle = "${currency.value.currencyName} (${currency.value.isoCode}) ${currency.value.symbol}",
+                        leadingIcon = { Icon(Icons.Filled.Language, contentDescription = "") },
+                        trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                        onClick = { showCurrencyDialog = true }
+                    )
+                    if (showCurrencyDialog) {
+                        CurrencySelectionDialog(
+                            current = currency.value,
+                            onDismiss = { showCurrencyDialog = false },
+                            onConfirm = { selected ->
+                                currency.value = selected
+                                CurrencyPreference.save(context, selected)
+                                showCurrencyDialog = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Task 6: Google Drive Backup
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
+                SettingsSection(title = "Data — Google Drive Backup") {
+                    val driveConnected = remember { mutableStateOf(false) }
+                    val lastBackup = remember { mutableStateOf<String?>(null) }
+                    if (!driveConnected.value) {
+                        SettingsItem(
+                            title = "Connect Google Drive",
+                            subtitle = "Sign in to enable backup & restore",
+                            leadingIcon = { Icon(Icons.Filled.CloudUpload, contentDescription = "") },
+                            trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                            onClick = {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Google Drive: add google-services.json and OAuth credentials to enable this feature.",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        )
+                    } else {
+                        SettingsItem(
+                            title = "Back Up to Google Drive",
+                            subtitle = lastBackup.value?.let { "Last backup: $it" } ?: "Never backed up",
+                            leadingIcon = { Icon(Icons.Filled.CloudUpload, contentDescription = "") },
+                            trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                            onClick = {
+                                android.widget.Toast.makeText(context, "Backup started…", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                        SettingsItem(
+                            title = "Restore from Google Drive",
+                            subtitle = "Replace current data from a backup",
+                            leadingIcon = { Icon(Icons.Filled.CloudDownload, contentDescription = "") },
+                            trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                            onClick = {
+                                android.widget.Toast.makeText(context, "Select a backup to restore…", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                        SettingsItem(
+                            title = "Disconnect Google Drive",
+                            subtitle = "Remove Drive access",
+                            leadingIcon = { Icon(Icons.Filled.Close, contentDescription = "") },
+                            trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                            onClick = { driveConnected.value = false },
+                            isDestructive = true
+                        )
+                    }
+                }
+            }
+        }
+
         // Data section
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -1571,7 +1849,7 @@ fun SettingsScreen(
                         onClick = {}
                     )
                     SettingsItem(
-                        title = "FinancialLedger",
+                        title = "Financial Ledger",
                         subtitle = "Modern personal finance tracker",
                         leadingIcon = { Icon(Icons.Filled.AccountBalanceWallet, contentDescription = "") },
                         onClick = {}
@@ -1811,6 +2089,102 @@ fun DeleteWalletDialog(
 }
 
 // =====================================================================
+// CURRENCY SELECTION DIALOG (Task 8)
+// =====================================================================
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CurrencySelectionDialog(
+    current: com.example.catatankeuangan.CurrencyInfo,
+    onDismiss: () -> Unit,
+    onConfirm: (com.example.catatankeuangan.CurrencyInfo) -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+    val filtered = remember(query) {
+        val q = query.lowercase()
+        if (q.isBlank()) CurrencyPreference.currencies
+        else CurrencyPreference.currencies.filter {
+            it.countryName.lowercase().contains(q) ||
+            it.currencyName.lowercase().contains(q) ||
+            it.isoCode.lowercase().contains(q) ||
+            it.symbol.contains(q)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Currency") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Search country or currency…") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = FinanceShapes.Medium
+                )
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 300.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    items(filtered) { info ->
+                        val isSelected = info.isoCode == current.isoCode
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onConfirm(info) }
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else androidx.compose.ui.graphics.Color.Transparent
+                                )
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                info.symbol,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.W700,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.width(36.dp),
+                                textAlign = TextAlign.Center
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    info.countryName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    "${info.currencyName} · ${info.isoCode}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+// =====================================================================
 // THEME PREFERENCE - Issue 7 FIX
 // =====================================================================
 @Composable
@@ -1972,6 +2346,9 @@ fun FinancialLedgerApp() {
         }
     }
 
+    // Task 8: Currency preference
+    val currency = remember { mutableStateOf(CurrencyPreference.load(context)) }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "home"
     val isTopLevel = currentRoute in listOf("home", "transactions", "settings")
@@ -1980,6 +2357,7 @@ fun FinancialLedgerApp() {
         colorScheme = colorScheme,
         typography = MaterialTheme.typography,
         content = {
+            CompositionLocalProvider(LocalCurrency provides currency.value) {
             // Issue 1 FIX: Scaffold with explicit containerColor matching surface,
             // no enableEdgeToEdge() in Activity, so no black bar behind nav
             Scaffold(
@@ -2063,10 +2441,16 @@ fun FinancialLedgerApp() {
                     }
                     composable("settings") {
                         val shareIntentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
-                        SettingsScreen(repo = repo, shareIntentLauncher = shareIntentLauncher, themePreference = themePreference)
+                        SettingsScreen(
+                            repo = repo,
+                            shareIntentLauncher = shareIntentLauncher,
+                            themePreference = themePreference,
+                            currency = currency
+                        )
                     }
                 }
             }
+            } // CompositionLocalProvider
         }
     )
 }

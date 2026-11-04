@@ -94,6 +94,14 @@ class FinanceRepository private constructor(internal val db: AppDatabase) {
     suspend fun update(tx: Transaction) = db.transactionDao().update(tx)
     suspend fun delete(tx: Transaction) = db.transactionDao().delete(tx)
     
+    /** Description suggestions for autocomplete. */
+    suspend fun getDescriptionSuggestions(query: String): List<String> =
+        db.transactionDao().getDescriptionSuggestions(query)
+
+    /** Flow of transactions for a specific year/month (month is 1-based, e.g. 1=Jan). */
+    fun getTransactionsByYearMonth(year: Int, month: Int) =
+        db.transactionDao().getByYearMonthFlow(year, month)
+
     suspend fun insertWallet(wallet: Wallet) = db.walletDao().insert(wallet)
     suspend fun updateWallet(wallet: Wallet, oldName: String? = null) {
         db.walletDao().update(wallet)

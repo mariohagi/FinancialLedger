@@ -37,4 +37,23 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions")
     fun deleteAll()
+
+    /** Filter by year/month for monthly navigation (date stored as ms epoch). */
+    @Query("""
+        SELECT * FROM transactions
+        WHERE CAST(strftime('%Y', date/1000, 'unixepoch') AS INTEGER) = :year
+          AND CAST(strftime('%m', date/1000, 'unixepoch') AS INTEGER) = :month
+        ORDER BY date DESC
+    """)
+    fun getByYearMonthFlow(year: Int, month: Int): Flow<List<Transaction>>
+
+    /** Distinct descriptions for autocomplete (case-insensitive prefix match). */
+    @Query("""
+        SELECT DISTINCT description FROM transactions
+        WHERE LOWER(description) LIKE '%' || LOWER(:query) || '%'
+          AND description != ''
+        ORDER BY description
+        LIMIT 8
+    """)
+    suspend fun getDescriptionSuggestions(query: String): List<String>
 }
