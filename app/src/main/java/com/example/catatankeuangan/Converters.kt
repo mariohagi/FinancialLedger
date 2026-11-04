@@ -18,11 +18,11 @@ class Converters {
     fun fromWalletSource(walletSource: WalletSource): String = walletSource.name
 
     @TypeConverter
-    fun toWalletSource(value: String): WalletSource = WalletSource.valueOf(value)
+    fun toWalletSource(value: String): WalletSource = try { WalletSource.valueOf(value) } catch (e: Exception) { WalletSource.WALLET }
 
     @TypeConverter
     fun fromWalletType(walletType: WalletType): String = walletType.name
 
     @TypeConverter
-    fun toWalletType(value: String): WalletType = WalletType.valueOf(value)
+    fun toWalletType(value: String): WalletType = try { WalletType.valueOf(value) } catch (e: Exception) { WalletType.CASH }
 }

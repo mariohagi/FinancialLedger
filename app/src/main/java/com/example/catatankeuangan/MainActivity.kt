@@ -12,7 +12,6 @@ import android.net.Uri
 import android.widget.DatePicker
 import android.widget.TimePicker
 import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -82,7 +81,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -109,6 +110,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Warning
 
 import com.example.catatankeuangan.ui.design.CategoryIcons
 import com.example.catatankeuangan.ui.design.FinanceDateFormatter
@@ -122,7 +124,6 @@ import com.example.catatankeuangan.Category
 import com.example.catatankeuangan.FinanceRepository
 import com.example.catatankeuangan.Transaction
 import com.example.catatankeuangan.Wallet
-import com.example.catatankeuangan.WalletSource
 import com.example.catatankeuangan.WalletType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -139,18 +140,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+
+// =====================================================================
+// HOME SCREEN
+// =====================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(repo: FinanceRepository) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
+    val wallets by repo.allWallets.collectAsState(initial = emptyList())
     val income = allTransactions.filter { it.type == Transaction.Type.INCOME }.sumOf { it.amount }
     val expense = allTransactions.filter { it.type == Transaction.Type.EXPENSE }.sumOf { it.amount }
     val balance = income + expense
-    
-    val walletBalance by repo.walletBalance.collectAsState(initial = 0.0)
-    val bankBalance by repo.bankBalance.collectAsState(initial = 0.0)
-    val stockWalletBalance by repo.stockWalletBalance.collectAsState(initial = 0.0)
-    
+
     val recentTransactions = allTransactions.reversed().take(5)
 
     Column(
@@ -159,19 +161,19 @@ fun HomeScreen(repo: FinanceRepository) {
             .padding(bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Issue 3: Removed Settings button from GreetingHeader
             GreetingHeader()
             BalanceCard(
                 totalBalance = balance,
-                walletBalance = walletBalance,
-                bankBalance = bankBalance,
-                stockWalletBalance = stockWalletBalance
+                wallets = wallets,
+                allTransactions = allTransactions
             )
             SummaryRow(income = income, expense = expense)
             ChartCard(income = income, expense = expense)
@@ -183,6 +185,7 @@ fun HomeScreen(repo: FinanceRepository) {
     }
 }
 
+// Issue 3 FIX: Settings button removed from Home screen header
 @Composable
 fun GreetingHeader() {
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
@@ -192,44 +195,30 @@ fun GreetingHeader() {
         else -> "Good Evening"
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column {
-            Text(
-                text = greeting,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Welcome back",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.W700
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(22.dp))
-        ) {
-            Icon(
-                Icons.Filled.Settings,
-                contentDescription = "Settings",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
+        Text(
+            text = greeting,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "Welcome back",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.W700
+        )
     }
 }
 
+// =====================================================================
+// BALANCE CARD - now uses dynamic Wallet entities instead of hardcoded WalletSource
+// =====================================================================
 @Composable
 fun BalanceCard(
     totalBalance: Double,
-    walletBalance: Double,
-    bankBalance: Double,
-    stockWalletBalance: Double
+    wallets: List<Wallet>,
+    allTransactions: List<Transaction>
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -271,80 +260,44 @@ fun BalanceCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Balance Sources", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onPrimary)
-            Spacer(modifier = Modifier.height(12.dp))
-            androidx.compose.foundation.lazy.LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                items(WalletSource.values()) { source ->
-                    val balance: Double
-                    val icon: androidx.compose.ui.graphics.vector.ImageVector
-                    val iconColor: Color
-                    val containerColor: Color
-                    when (source) {
-                        WalletSource.WALLET -> {
-                            balance = walletBalance
-                            icon = Icons.Filled.AccountBalanceWallet
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
-                        WalletSource.BANK -> {
-                            balance = bankBalance
-                            icon = Icons.Filled.AccountBalance
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
-                        WalletSource.STOCK_WALLET -> {
-                            balance = stockWalletBalance
-                            icon = Icons.Filled.TrendingUp
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
-                        WalletSource.CRYPTO_WALLET -> {
-                            balance = 0.0
-                            icon = Icons.Filled.CurrencyBitcoin
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
-                        WalletSource.SAVINGS -> {
-                            balance = 0.0
-                            icon = Icons.Filled.Savings
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
-                        WalletSource.CREDIT_CARD -> {
-                            balance = 0.0
-                            icon = Icons.Filled.CreditCard
-                            iconColor = FinanceColors.ExpenseRed
-                            containerColor = FinanceColors.ExpenseRedContainer
-                        }
-                        WalletSource.E_WALLET -> {
-                            balance = 0.0
-                            icon = Icons.Filled.PhoneAndroid
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
-                        WalletSource.INVESTMENT -> {
-                            balance = 0.0
-                            icon = Icons.Filled.ShowChart
-                            iconColor = FinanceColors.IncomeGreen
-                            containerColor = FinanceColors.IncomeGreenContainer
-                        }
+            if (wallets.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("Wallets", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onPrimary)
+                Spacer(modifier = Modifier.height(12.dp))
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    items(wallets) { wallet ->
+                        val walletBalance = allTransactions
+                            .filter { it.walletSource.equals(wallet.name, ignoreCase = true) || (it.walletSource == "WALLET" && wallet.name == "My Wallet") }
+                            .sumOf { it.amount }
+                        WalletSourceCard(
+                            label = wallet.name,
+                            amount = walletBalance,
+                            icon = getWalletIcon(wallet.type),
+                            iconColor = FinanceColors.IncomeGreen,
+                            containerColor = FinanceColors.IncomeGreenContainer,
+                            modifier = Modifier.width(160.dp)
+                        )
                     }
-                    WalletSourceCard(
-                        label = source.displayName,
-                        amount = balance,
-                        icon = icon,
-                        iconColor = iconColor,
-                        containerColor = containerColor,
-                        modifier = Modifier.width(160.dp)
-                    )
                 }
             }
         }
+    }
+}
+
+fun getWalletIcon(type: WalletType): ImageVector {
+    return when (type) {
+        WalletType.CASH -> Icons.Filled.AccountBalanceWallet
+        WalletType.BANK -> Icons.Filled.AccountBalance
+        WalletType.CREDIT_CARD -> Icons.Filled.CreditCard
+        WalletType.E_WALLET -> Icons.Filled.PhoneAndroid
+        WalletType.INVESTMENT -> Icons.Filled.ShowChart
+        WalletType.SAVINGS -> Icons.Filled.Savings
+        WalletType.CRYPTO -> Icons.Filled.CurrencyBitcoin
+        WalletType.OTHER -> Icons.Filled.AccountBalanceWallet
     }
 }
 
@@ -394,6 +347,9 @@ fun WalletSourceCard(
     }
 }
 
+// =====================================================================
+// SUMMARY & CHART
+// =====================================================================
 @Composable
 fun SummaryRow(income: Double, expense: Double) {
     Row(
@@ -605,6 +561,9 @@ fun LegendItem(color: Color, label: String) {
     }
 }
 
+// =====================================================================
+// RECENT TRANSACTIONS
+// =====================================================================
 @Composable
 fun RecentTransactionsSection(transactions: List<Transaction>, onSeeAll: () -> Unit) {
     Column(
@@ -693,7 +652,8 @@ fun TransactionItem(tx: Transaction) {
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier.size(44.dp),
@@ -738,7 +698,7 @@ fun TransactionItem(tx: Transaction) {
                         )
                         Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outlineVariant)
                         Text(
-                            tx.walletSource.displayName,
+                            tx.walletSource,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -755,6 +715,9 @@ fun TransactionItem(tx: Transaction) {
     }
 }
 
+// =====================================================================
+// TRANSACTIONS SCREEN
+// =====================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController) {
@@ -849,7 +812,8 @@ fun TransactionItemWithActions(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier.size(44.dp),
@@ -871,26 +835,26 @@ fun TransactionItemWithActions(
                         )
                     }
                 }
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         tx.description,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.W500,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(tx.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outlineVariant)
                         Text(FinanceDateFormatter.formatDateTime(tx.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outlineVariant)
-                        Text(tx.walletSource.displayName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     "$amountPrefix${FinanceFormatter.formatIDR(Math.abs(tx.amount))}",
@@ -898,17 +862,26 @@ fun TransactionItemWithActions(
                     fontWeight = FontWeight.W700,
                     color = amountColor
                 )
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }
     }
 }
 
+// =====================================================================
+// ADD / EDIT TRANSACTION SCREEN
+// Issues 4, 5, 6 FIXED here
+// =====================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
@@ -918,33 +891,65 @@ fun AddTransactionScreen(
 ) {
     val context = LocalContext.current
     val categories by repo.allCategories.collectAsState(initial = emptyList())
+    val wallets by repo.allWallets.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
     val isEditing = txId != -1
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
-    val initialTx = if (isEditing) {
-        allTransactions.find { it.id == txId }
-    } else null
 
-    var description by remember { mutableStateOf(initialTx?.description ?: "") }
-    var amountStr by remember { mutableStateOf(Math.abs(initialTx?.amount ?: 0.0).toString()) }
-    var type by remember { mutableStateOf(initialTx?.type ?: Transaction.Type.INCOME) }
-    var category by remember { mutableStateOf(initialTx?.category ?: categories.firstOrNull()?.name ?: "General") }
-    var walletSource by remember { mutableStateOf(initialTx?.walletSource ?: WalletSource.WALLET) }
-    var selectedDate by remember { mutableStateOf(initialTx?.date ?: Date()) }
+    // Issue 6 FIX: Use LaunchedEffect to properly load the existing transaction
+    var description by remember { mutableStateOf("") }
+    var amountStr by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(Transaction.Type.INCOME) }
+    var category by remember { mutableStateOf("General") }
+    var walletSource by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(Date()) }
+    var isInitialized by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
+
+    // Load existing transaction data when editing
+    LaunchedEffect(allTransactions, isEditing, txId, wallets, categories) {
+        if (isEditing && !isInitialized && allTransactions.isNotEmpty()) {
+            val tx = allTransactions.find { it.id == txId }
+            if (tx != null) {
+                description = tx.description
+                amountStr = Math.abs(tx.amount).toLong().toString()
+                type = tx.type
+                category = tx.category
+                walletSource = tx.walletSource
+                selectedDate = tx.date
+                isInitialized = true
+            }
+        } else if (!isEditing && !isInitialized) {
+            // Set default category
+            if (categories.isNotEmpty()) {
+                category = categories.first().name
+            }
+            if (wallets.isNotEmpty()) {
+                walletSource = wallets.first().name
+            }
+            if (categories.isNotEmpty() && wallets.isNotEmpty()) {
+                isInitialized = true
+            }
+        } else if (walletSource.isBlank() && wallets.isNotEmpty()) {
+            walletSource = wallets.first().name
+        }
+    }
 
     val dateFormatter = remember { java.text.SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")) }
     val timeFormatter = remember { java.text.SimpleDateFormat("HH:mm", Locale("id", "ID")) }
 
+    // Issue 5 FIX: Use proper lambda that shows the dialog
     val showDatePicker = {
         val calendar = java.util.Calendar.getInstance()
         calendar.time = selectedDate
         DatePickerDialog(
             context,
             { _, year, month, dayOfMonth ->
-                calendar.set(year, month, dayOfMonth)
-                selectedDate = calendar.time
-                Unit
+                val cal = java.util.Calendar.getInstance()
+                cal.time = selectedDate
+                cal.set(year, month, dayOfMonth)
+                selectedDate = cal.time
             },
             calendar.get(java.util.Calendar.YEAR),
             calendar.get(java.util.Calendar.MONTH),
@@ -958,10 +963,11 @@ fun AddTransactionScreen(
         TimePickerDialog(
             context,
             { _, hourOfDay, minute ->
-                calendar.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
-                calendar.set(java.util.Calendar.MINUTE, minute)
-                selectedDate = calendar.time
-                Unit
+                val cal = java.util.Calendar.getInstance()
+                cal.time = selectedDate
+                cal.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+                cal.set(java.util.Calendar.MINUTE, minute)
+                selectedDate = cal.time
             },
             calendar.get(java.util.Calendar.HOUR_OF_DAY),
             calendar.get(java.util.Calendar.MINUTE),
@@ -985,135 +991,197 @@ fun AddTransactionScreen(
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
+        },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp
+            ) {
+                // Issue 4 FIX: Balanced action buttons (no unnecessary long button)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = FinanceShapes.Medium
+                    ) {
+                        Text("Cancel", style = MaterialTheme.typography.labelLarge)
+                    }
+                    Button(
+                        onClick = {
+                            if (isSaving) return@Button
+                            isSaving = true
+                            val amt = amountStr.toDoubleOrNull() ?: return@Button
+                            val finalAmount = if (type == Transaction.Type.EXPENSE) -amt else amt
+                            val chosenWallet = if (walletSource.isNotBlank()) walletSource else (wallets.firstOrNull()?.name ?: "My Wallet")
+                            // Issue 6 FIX: Use proper txId for update
+                            val tx = Transaction(
+                                id = if (isEditing) txId else 0,
+                                description = description.trim(),
+                                amount = finalAmount,
+                                type = type,
+                                category = category,
+                                walletSource = chosenWallet,
+                                date = selectedDate
+                            )
+                            scope.launch(Dispatchers.IO) {
+                                if (isEditing) {
+                                    repo.update(tx)
+                                } else {
+                                    repo.insert(tx)
+                                }
+                            }
+                            navController.popBackStack()
+                        },
+                        enabled = canSave && !isSaving,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = FinanceShapes.Medium,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Text(if (isEditing) "Update" else "Save", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.W600)
+                    }
+                }
+            }
         }
     ) { innerPadding ->
-        val scrollState = rememberScrollState()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            TypeSelector(
-                selectedType = type,
-                onTypeChange = { newType ->
-                    type = newType
-                }
-            )
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
-                placeholder = { Text("e.g., Lunch, Salary, Shopping") },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = FinanceShapes.Medium
-            )
-
-            OutlinedTextField(
-                value = amountStr,
-                onValueChange = { amountStr = it.filter { it.isDigit() } },
-                label = { Text("Amount (IDR)") },
-                placeholder = { Text("0") },
-                leadingIcon = {
-                    Text("Rp", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = FinanceShapes.Medium
-            )
-
-            CategorySelector(
-                selectedCategory = category,
-                categories = categories,
-                onCategoryChange = { category = it }
-            )
-
-            WalletSourceSelector(
-                selectedWalletSource = walletSource,
-                onWalletSourceChange = { walletSource = it }
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                OutlinedTextField(
-                    value = dateFormatter.format(selectedDate),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Date") },
-                    trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Date") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showDatePicker() },
-                    shape = FinanceShapes.Medium
-                )
-                OutlinedTextField(
-                    value = timeFormatter.format(selectedDate),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Time") },
-                    trailingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = "Time") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showTimePicker() },
-                    shape = FinanceShapes.Medium
-                )
-            }
-
-            Spacer(modifier = Modifier.fillMaxHeight())
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    shape = FinanceShapes.Medium
-                ) {
-                    Text("Cancel", style = MaterialTheme.typography.labelLarge)
-                }
-                Button(
-                    onClick = {
-                        val amt = amountStr.toDoubleOrNull() ?: return@Button
-                        val finalAmount = if (type == Transaction.Type.EXPENSE) -amt else amt
-                        val tx = Transaction(
-                            id = initialTx?.id ?: 0,
-                            description = description.trim(),
-                            amount = finalAmount,
-                            type = type,
-                            category = category,
-                            walletSource = walletSource,
-                            date = selectedDate
-                        )
-                        scope.launch(Dispatchers.IO) {
-                            if (isEditing) repo.update(tx) else repo.insert(tx)
+                item {
+                    TypeSelector(
+                        selectedType = type,
+                        onTypeChange = { newType ->
+                            type = newType
                         }
-                        navController.popBackStack()
-                    },
-                    enabled = canSave,
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    shape = FinanceShapes.Medium,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                ) {
-                    Text("Save", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.W600)
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description") },
+                        placeholder = { Text("e.g., Lunch, Salary, Shopping") },
+                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = FinanceShapes.Medium
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = amountStr,
+                        onValueChange = { amountStr = it.filter { c -> c.isDigit() } },
+                        label = { Text("Amount (IDR)") },
+                        placeholder = { Text("0") },
+                        leadingIcon = {
+                            Text("Rp", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = FinanceShapes.Medium
+                    )
+                }
+
+                // Issue 5 FIX: Category dropdown with proper click handling
+                item {
+                    CategorySelector(
+                        selectedCategory = category,
+                        categories = categories,
+                        onCategoryChange = { category = it }
+                    )
+                }
+
+                // Issue 5 FIX: Wallet Source dropdown with proper click handling
+                item {
+                    WalletSourceSelector(
+                        selectedWalletSource = walletSource,
+                        wallets = wallets,
+                        onWalletSourceChange = { walletSource = it }
+                    )
+                }
+
+                // Issue 4 FIX: Date/Time fields with .weight(1f) to prevent overflow
+                // Issue 5 FIX: Clickable overlay on date/time fields
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Date field with clickable overlay
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = dateFormatter.format(selectedDate),
+                                onValueChange = {},
+                                readOnly = true,
+                                enabled = false,
+                                label = { Text("Date") },
+                                trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Date") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = FinanceShapes.Medium,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                            // Transparent overlay to capture clicks
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable { showDatePicker() }
+                            )
+                        }
+                        // Time field with clickable overlay
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = timeFormatter.format(selectedDate),
+                                onValueChange = {},
+                                readOnly = true,
+                                enabled = false,
+                                label = { Text("Time") },
+                                trailingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = "Time") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = FinanceShapes.Medium,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable { showTimePicker() }
+                            )
+                        }
+                    }
                 }
             }
         }
-    }
 }
 
+// =====================================================================
+// TYPE SELECTOR
+// =====================================================================
 @Composable
 fun TypeSelector(
     selectedType: Transaction.Type,
@@ -1188,6 +1256,9 @@ fun TypeButton(
     }
 }
 
+// =====================================================================
+// CATEGORY SELECTOR - Issue 5 FIX: Clickable overlay instead of .clickable on TextField
+// =====================================================================
 @Composable
 fun CategorySelector(
     selectedCategory: String,
@@ -1196,229 +1267,220 @@ fun CategorySelector(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = selectedCategory,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Category") },
-                trailingIcon = {
-                    Icon(
-                        Icons.Filled.ExpandMore,
-                        contentDescription = "Category",
-                        tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true },
-                shape = FinanceShapes.Medium
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = selectedCategory,
+            onValueChange = {},
+            readOnly = true,
+            enabled = false,
+            label = { Text("Category") },
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.ExpandMore,
+                    contentDescription = "Category",
+                    tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledTrailingIconColor = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (expanded) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { expanded = false }
-                )
-            }
-        }
-
-        if (expanded) {
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        )
+        // Transparent overlay to capture clicks
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            categories.forEach { cat ->
+                val isSelected = cat.name == selectedCategory
                 DropdownMenuItem(
-                    text = { Text("Categories", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    onClick = { }
-                )
-                categories.forEach { cat ->
-                    val isSelected = cat.name == selectedCategory
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        RoundedCornerShape(18.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier.size(40.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .background(iconBgColor, RoundedCornerShape(20.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            CategoryIcons.getIcon(cat.name),
-                                            contentDescription = cat.name,
-                                            tint = iconColor,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    cat.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                Icon(
+                                    CategoryIcons.getIcon(cat.name),
+                                    contentDescription = cat.name,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.weight(1f))
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Filled.Check,
-                                        contentDescription = "Selected",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
                             }
-                        },
-                        onClick = {
-                            onCategoryChange(cat.name)
-                            expanded = false
-                        },
-                        leadingIcon = { }
-                    )
-                }
+                            Text(
+                                cat.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                            if (isSelected) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    },
+                    onClick = {
+                        onCategoryChange(cat.name)
+                        expanded = false
+                    }
+                )
             }
         }
     }
 }
 
+// =====================================================================
+// WALLET SOURCE SELECTOR - Issue 5 FIX: Clickable overlay
+// =====================================================================
 @Composable
 fun WalletSourceSelector(
-    selectedWalletSource: WalletSource,
-    onWalletSourceChange: (WalletSource) -> Unit
+    selectedWalletSource: String,
+    wallets: List<Wallet>,
+    onWalletSourceChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val displayValue = if (selectedWalletSource.isNotBlank()) selectedWalletSource else (wallets.firstOrNull()?.name ?: "No Wallet")
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = selectedWalletSource.displayName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Wallet Source") },
-                trailingIcon = {
-                    Icon(
-                        Icons.Filled.ExpandMore,
-                        contentDescription = "Wallet Source",
-                        tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true },
-                shape = FinanceShapes.Medium
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = displayValue,
+            onValueChange = {},
+            readOnly = true,
+            enabled = false,
+            label = { Text("Wallet Source") },
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.ExpandMore,
+                    contentDescription = "Wallet Source",
+                    tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledTrailingIconColor = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (expanded) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { expanded = false }
-                )
-            }
-        }
-
-        if (expanded) {
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            wallets.forEach { wallet ->
+                val isSelected = wallet.name.equals(selectedWalletSource, ignoreCase = true)
                 DropdownMenuItem(
-                    text = { Text("Wallet Sources", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    onClick = { }
-                )
-                WalletSource.values().forEach { source ->
-                    val isSelected = source == selectedWalletSource
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        RoundedCornerShape(18.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier.size(40.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    val iconColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    val iconBgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerHighest
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .background(iconBgColor, RoundedCornerShape(20.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            when (source) {
-                                                WalletSource.WALLET -> Icons.Filled.AccountBalanceWallet
-                                                WalletSource.BANK -> Icons.Filled.AccountBalance
-                                                WalletSource.STOCK_WALLET -> Icons.Filled.TrendingUp
-                                                WalletSource.CRYPTO_WALLET -> Icons.Filled.CurrencyBitcoin
-                                                WalletSource.SAVINGS -> Icons.Filled.Savings
-                                                WalletSource.CREDIT_CARD -> Icons.Filled.CreditCard
-                                                WalletSource.E_WALLET -> Icons.Filled.PhoneAndroid
-                                                WalletSource.INVESTMENT -> Icons.Filled.ShowChart
-                                            },
-                                            contentDescription = source.displayName,
-                                            tint = iconColor,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Icon(
+                                    getWalletIcon(wallet.type),
+                                    contentDescription = wallet.name,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Column {
                                 Text(
-                                    source.displayName,
+                                    wallet.name,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = if (isSelected) FontWeight.W600 else FontWeight.W400,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
-                                Spacer(modifier = Modifier.weight(1f))
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Filled.Check,
-                                        contentDescription = "Selected",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
+                                Text(
+                                    wallet.type.displayName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                        },
-                        onClick = {
-                            onWalletSourceChange(source)
-                            expanded = false
-                        },
-                        leadingIcon = { }
-                    )
-                }
-            }
+                            if (isSelected) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    },
+                    onClick = {
+                        onWalletSourceChange(wallet.name)
+                        expanded = false
                     }
-                }
+                )
             }
+        }
+    }
+}
 
-            @OptIn(ExperimentalMaterial3Api::class)
-            @Composable
-            fun SettingsScreen(repo: FinanceRepository, shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>) {
-                val context = LocalContext.current
-                val themePreference = rememberThemePreference(context)
-                val scope = rememberCoroutineScope()
+// =====================================================================
+// SETTINGS SCREEN
+// =====================================================================
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    repo: FinanceRepository,
+    shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
+    themePreference: MutableState<Int>
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val wallets by repo.allWallets.collectAsState(initial = emptyList())
+    val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+    // Wallet management state
+    var showAddWalletDialog by remember { mutableStateOf(false) }
+    var showRenameWalletDialog by remember { mutableStateOf<Wallet?>(null) }
+    var showDeleteWalletDialog by remember { mutableStateOf<Wallet?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Appearance section
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = FinanceShapes.Large,
@@ -1435,9 +1497,72 @@ fun WalletSourceSelector(
                         },
                         leadingIcon = { Icon(Icons.Filled.Brightness6, contentDescription = "") },
                         trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
-                        onClick = { showThemeDialog(context, themePreference) }
+                        onClick = {
+                            // Issue 7 FIX: Show theme dialog that updates Compose state
+                            val options = arrayOf("Light", "Dark", "System Default")
+                            android.app.AlertDialog.Builder(context)
+                                .setTitle("Choose Theme")
+                                .setSingleChoiceItems(options, themePreference.value) { dialog, which ->
+                                    themePreference.value = which
+                                    context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putInt("theme_mode", which)
+                                        .apply()
+                                    dialog.dismiss()
+                                }
+                                .setNegativeButton("Cancel") { _, _ -> }
+                                .show()
+                        }
                     )
                 }
+            }
+        }
+
+        // Issue 2: Wallet Management section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
+                SettingsSection(title = "Wallets") {
+                    wallets.forEach { wallet ->
+                        val txCount = allTransactions.count { it.walletSource.equals(wallet.name, ignoreCase = true) || (it.walletSource == "WALLET" && wallet.name == "My Wallet") }
+                        SettingsItem(
+                            title = wallet.name,
+                            subtitle = "${wallet.type.displayName} • $txCount transactions",
+                            leadingIcon = { Icon(getWalletIcon(wallet.type), contentDescription = "") },
+                            trailingIcon = {
+                                Row {
+                                    IconButton(onClick = { showRenameWalletDialog = wallet }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.Filled.Edit, contentDescription = "Rename", modifier = Modifier.size(16.dp))
+                                    }
+                                    IconButton(onClick = { showDeleteWalletDialog = wallet }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            },
+                            onClick = { showRenameWalletDialog = wallet }
+                        )
+                    }
+                    SettingsItem(
+                        title = "Add Wallet",
+                        subtitle = "Create a new wallet source",
+                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = "") },
+                        trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                        onClick = { showAddWalletDialog = true }
+                    )
+                }
+            }
+        }
+
+        // Data section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
                 SettingsSection(title = "Data") {
                     SettingsItem(
                         title = "Export Data",
@@ -1455,6 +1580,16 @@ fun WalletSourceSelector(
                         isDestructive = true
                     )
                 }
+            }
+        }
+
+        // About section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
                 SettingsSection(title = "About") {
                     SettingsItem(
                         title = "Version",
@@ -1472,8 +1607,239 @@ fun WalletSourceSelector(
             }
         }
     }
+
+    // Add Wallet Dialog
+    if (showAddWalletDialog) {
+        AddWalletDialog(
+            existingNames = wallets.map { it.name },
+            onDismiss = { showAddWalletDialog = false },
+            onConfirm = { name, type ->
+                scope.launch(Dispatchers.IO) {
+                    repo.insertWallet(Wallet(name = name, type = type))
+                }
+                showAddWalletDialog = false
+            }
+        )
+    }
+
+    // Rename Wallet Dialog
+    showRenameWalletDialog?.let { wallet ->
+        RenameWalletDialog(
+            wallet = wallet,
+            existingNames = wallets.map { it.name },
+            onDismiss = { showRenameWalletDialog = null },
+            onConfirm = { newName ->
+                val oldName = wallet.name
+                scope.launch(Dispatchers.IO) {
+                    repo.updateWallet(wallet.copy(name = newName), oldName = oldName)
+                }
+                showRenameWalletDialog = null
+            }
+        )
+    }
+
+    // Delete Wallet Dialog
+    showDeleteWalletDialog?.let { wallet ->
+        val txCount = allTransactions.count { it.walletSource.equals(wallet.name, ignoreCase = true) || (it.walletSource == "WALLET" && wallet.name == "My Wallet") }
+        DeleteWalletDialog(
+            wallet = wallet,
+            transactionCount = txCount,
+            onDismiss = { showDeleteWalletDialog = null },
+            onConfirm = {
+                scope.launch(Dispatchers.IO) {
+                    repo.deleteWallet(wallet)
+                }
+                showDeleteWalletDialog = null
+            }
+        )
+    }
 }
 
+// =====================================================================
+// WALLET MANAGEMENT DIALOGS (Issue 2)
+// =====================================================================
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddWalletDialog(
+    existingNames: List<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (String, WalletType) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(WalletType.CASH) }
+    var typeExpanded by remember { mutableStateOf(false) }
+    val nameError = when {
+        name.isBlank() -> "Name cannot be empty"
+        existingNames.any { it.equals(name.trim(), ignoreCase = true) } -> "Wallet name already exists"
+        else -> null
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Wallet") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Wallet Name") },
+                    singleLine = true,
+                    isError = name.isNotEmpty() && nameError != null,
+                    supportingText = {
+                        if (name.isNotEmpty() && nameError != null) {
+                            Text(nameError, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = FinanceShapes.Medium
+                )
+                // Wallet type selector
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = selectedType.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        label = { Text("Type") },
+                        trailingIcon = { Icon(Icons.Filled.ExpandMore, contentDescription = "") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FinanceShapes.Medium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { typeExpanded = true })
+                    DropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
+                    ) {
+                        WalletType.values().forEach { wt ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(getWalletIcon(wt), contentDescription = "", modifier = Modifier.size(20.dp))
+                                        Text(wt.displayName)
+                                    }
+                                },
+                                onClick = {
+                                    selectedType = wt
+                                    typeExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(name.trim(), selectedType) },
+                enabled = name.trim().isNotEmpty() && nameError == null
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun RenameWalletDialog(
+    wallet: Wallet,
+    existingNames: List<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(wallet.name) }
+    val nameError = when {
+        name.isBlank() -> "Name cannot be empty"
+        existingNames.any { it.equals(name.trim(), ignoreCase = true) && !it.equals(wallet.name, ignoreCase = true) } -> "Wallet name already exists"
+        else -> null
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rename Wallet") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Wallet Name") },
+                singleLine = true,
+                isError = name.isNotEmpty() && nameError != null,
+                supportingText = {
+                    if (name.isNotEmpty() && nameError != null) {
+                        Text(nameError, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = FinanceShapes.Medium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(name.trim()) },
+                enabled = name.trim().isNotEmpty() && nameError == null
+            ) {
+                Text("Rename")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun DeleteWalletDialog(
+    wallet: Wallet,
+    transactionCount: Int,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Wallet") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (transactionCount > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Filled.Warning, contentDescription = "", tint = MaterialTheme.colorScheme.error)
+                        Text(
+                            "This wallet has $transactionCount transaction(s). Deleting it will NOT remove those transactions, but they will no longer be linked to a wallet.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    Text("Delete wallet '${wallet.name}'?")
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+// =====================================================================
+// THEME PREFERENCE - Issue 7 FIX
+// =====================================================================
 @Composable
 fun rememberThemePreference(context: Context): MutableState<Int> {
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -1481,40 +1847,18 @@ fun rememberThemePreference(context: Context): MutableState<Int> {
     return remember { mutableStateOf(initialValue) }
 }
 
-fun showThemeDialog(context: Context, themePreference: MutableState<Int>) {
-    val options = arrayOf("Light", "Dark", "System Default")
-    android.app.AlertDialog.Builder(context)
-        .setTitle("Choose Theme")
-        .setSingleChoiceItems(options, themePreference.value) { _, which ->
-            themePreference.value = which
-            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                .edit()
-                .putInt("theme_mode", which)
-                .apply()
-            // Apply theme change
-            val activity = context as? androidx.appcompat.app.AppCompatActivity
-            activity?.let {
-                when (which) {
-                    0 -> it.delegate.setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
-                    1 -> it.delegate.setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
-                    else -> it.delegate.setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                }
-            }
-        }
-        .setPositiveButton("OK") { _, _ -> }
-        .show()
-}
-
+// =====================================================================
+// DATA EXPORT & CLEAR
+// =====================================================================
 fun exportData(context: Context, repo: FinanceRepository, scope: kotlinx.coroutines.CoroutineScope) {
     scope.launch(Dispatchers.IO) {
         val transactions = repo.db.transactionDao().getAll()
         val csv = StringBuilder()
         csv.appendLine("ID,Description,Amount,Type,Category,Wallet Source,Date")
         transactions.forEach { tx ->
-            csv.appendLine("${tx.id},${tx.description},${tx.amount},${tx.type},${tx.category},${tx.walletSource.displayName},${tx.date.time}")
+            csv.appendLine("${tx.id},${tx.description},${tx.amount},${tx.type},${tx.category},${tx.walletSource},${tx.date.time}")
         }
-        
-        // Save to Downloads folder
+
         val fileName = "financial_ledger_export_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
         val resolver = context.contentResolver
         val contentValues = android.content.ContentValues().apply {
@@ -1525,8 +1869,8 @@ fun exportData(context: Context, repo: FinanceRepository, scope: kotlinx.corouti
             }
         }
         val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-        uri?.let { uri ->
-            resolver.openOutputStream(uri)?.use { outputStream ->
+        uri?.let { u ->
+            resolver.openOutputStream(u)?.use { outputStream ->
                 outputStream.write(csv.toString().toByteArray())
             }
             val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -1545,7 +1889,6 @@ fun showClearDataDialog(context: Context, repo: FinanceRepository, scope: kotlin
             scope.launch(Dispatchers.IO) {
                 repo.db.transactionDao().deleteAll()
                 repo.db.categoryDao().deleteAll()
-                // Re-seed default categories
                 val defaultCategories = listOf(
                     Category("Food & Dining", android.R.drawable.ic_menu_mapmode),
                     Category("Transport", android.R.drawable.ic_menu_directions),
@@ -1567,6 +1910,9 @@ fun showClearDataDialog(context: Context, repo: FinanceRepository, scope: kotlin
         .show()
 }
 
+// =====================================================================
+// SETTINGS UI COMPONENTS
+// =====================================================================
 @Composable
 fun SettingsSection(title: String, content: @Composable () -> Unit) {
     Column(
@@ -1611,7 +1957,8 @@ fun SettingsItem(
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier.size(40.dp),
@@ -1631,112 +1978,136 @@ fun SettingsItem(
     }
 }
 
-
-
+// =====================================================================
+// MAIN APP COMPOSABLE
+// Issues 1, 6, 7 FIXED here
+// =====================================================================
 @Composable
 fun FinancialLedgerApp() {
     val context = LocalContext.current
     val repo = FinanceRepository.getInstance(context)
     val navController = rememberNavController()
-    
-    // Read theme preference and apply to MaterialTheme
+
+    // Issue 7 FIX: Theme preference drives MaterialTheme colorScheme directly via Compose state
     val themePreference = rememberThemePreference(context)
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme  // Light
         1 -> DarkColorScheme   // Dark
-        else -> {              // System default - check system theme
-            val isSystemDark = LocalConfiguration.current.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        else -> {              // System default
+            val isSystemDark = LocalConfiguration.current.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
             if (isSystemDark) DarkColorScheme else LightColorScheme
         }
     }
-    
-    // Get current route from back stack
-    val currentRoute = remember { mutableStateOf("home") }
-    
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: "home"
+    val isTopLevel = currentRoute in listOf("home", "transactions", "settings")
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = MaterialTheme.typography,
         content = {
+            // Issue 1 FIX: Scaffold with explicit containerColor matching surface,
+            // no enableEdgeToEdge() in Activity, so no black bar behind nav
             Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            ) {
-                NavigationBarItem(
-                    selected = currentRoute.value == "home",
-                    onClick = { 
-                        navController.navigate("home") { popUpTo("home") { inclusive = true }; launchSingleTop = true; restoreState = true }
-                        currentRoute.value = "home"
-                    },
-                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                    label = { Text("Home") }
-                )
-                NavigationBarItem(
-                    selected = currentRoute.value == "transactions",
-                    onClick = { 
-                        navController.navigate("transactions") { popUpTo("transactions") { inclusive = true }; launchSingleTop = true; restoreState = true }
-                        currentRoute.value = "transactions"
-                    },
-                    icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
-                    label = { Text("Transactions") }
-                )
-                NavigationBarItem(
-                    selected = currentRoute.value == "settings",
-                    onClick = { 
-                        navController.navigate("settings") { popUpTo("settings") { inclusive = true }; launchSingleTop = true; restoreState = true }
-                        currentRoute.value = "settings"
-                    },
-                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings") }
-                )
-            }
-        },
-        modifier = Modifier,
-        floatingActionButton = {
-            if (currentRoute.value == "home" || currentRoute.value == "transactions") {
-                FloatingActionButton(
-                    onClick = { navController.navigate("add_transaction/-1") },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
+                containerColor = MaterialTheme.colorScheme.background,
+                bottomBar = {
+                    if (isTopLevel) {
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ) {
+                            NavigationBarItem(
+                                selected = currentRoute == "home",
+                                onClick = {
+                                    if (currentRoute != "home") {
+                                        navController.navigate("home") {
+                                            popUpTo("home") { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                },
+                                icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                                label = { Text("Home") }
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == "transactions",
+                                onClick = {
+                                    if (currentRoute != "transactions") {
+                                        navController.navigate("transactions") {
+                                            popUpTo("home")
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                },
+                                icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
+                                label = { Text("Transactions") }
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == "settings",
+                                onClick = {
+                                    if (currentRoute != "settings") {
+                                        navController.navigate("settings") {
+                                            popUpTo("home")
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                },
+                                icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+                                label = { Text("Settings") }
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier,
+                floatingActionButton = {
+                    if (currentRoute == "home" || currentRoute == "transactions") {
+                        FloatingActionButton(
+                            onClick = { navController.navigate("add_transaction/-1") },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
+                    composable("home") { HomeScreen(repo = repo) }
+                    composable("transactions") { TransactionsScreen(repo = repo, navController = navController) }
+                    // Issue 6 FIX: Proper navArgument with NavType.StringType, parse as Int
+                    composable(
+                        route = "add_transaction/{txId}",
+                        arguments = listOf(navArgument("txId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val txIdStr = backStackEntry.arguments?.getString("txId") ?: "-1"
+                        val txId = txIdStr.toIntOrNull() ?: -1
+                        AddTransactionScreen(
+                            repo = repo,
+                            navController = navController,
+                            txId = txId
+                        )
+                    }
+                    composable("settings") {
+                        val shareIntentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
+                        SettingsScreen(repo = repo, shareIntentLauncher = shareIntentLauncher, themePreference = themePreference)
+                    }
                 }
             }
         }
-    ) { innerPadding ->
-        NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
-            composable("home") { HomeScreen(repo = repo) }
-            composable("transactions") { TransactionsScreen(repo = repo, navController = navController) }
-            composable(
-                route = "add_transaction/{txId}"
-            ) { backStackEntry ->
-                val txId = backStackEntry.arguments?.getInt("txId") ?: -1
-                AddTransactionScreen(
-                    repo = repo,
-                    navController = navController,
-                    txId = txId
-                )
-            }
-            composable("settings") {
-                val shareIntentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
-                SettingsScreen(repo = repo, shareIntentLauncher = shareIntentLauncher)
-            }
-        }
-    }
-}
-)
-
+    )
 }
 
+// =====================================================================
+// MAIN ACTIVITY
+// Issue 1 FIX: Removed enableEdgeToEdge() to eliminate black bar
+// =====================================================================
 public class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Issue 1: DO NOT call enableEdgeToEdge() - it causes the black bar artifact
         setContent {
             FinancialLedgerApp()
         }
     }
 }
-
