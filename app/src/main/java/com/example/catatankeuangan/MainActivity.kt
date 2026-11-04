@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,6 +78,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -155,33 +157,18 @@ fun HomeScreen(repo: FinanceRepository) {
 
     val recentTransactions = allTransactions.reversed().take(5)
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = 16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Issue 3: Removed Settings button from GreetingHeader
-            GreetingHeader()
-            BalanceCard(
-                totalBalance = balance,
-                wallets = wallets,
-                allTransactions = allTransactions
-            )
-            SummaryRow(income = income, expense = expense)
-            ChartCard(income = income, expense = expense)
-            RecentTransactionsSection(
-                transactions = recentTransactions,
-                onSeeAll = { }
-            )
-        }
+        item { GreetingHeader() }
+        item { BalanceCard(totalBalance = balance, wallets = wallets, allTransactions = allTransactions) }
+        item { SummaryRow(income = income, expense = expense) }
+        item { ChartCard(income = income, expense = expense) }
+        item { RecentTransactionsSection(transactions = recentTransactions, onSeeAll = { }) }
     }
 }
 
@@ -588,11 +575,11 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onSeeAll: () -> U
                 subtitle = "Tap the + button to add your first transaction"
             )
         } else {
-            LazyColumn(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(transactions) { tx ->
+                transactions.forEach { tx ->
                     TransactionItem(tx = tx)
                 }
             }
@@ -977,28 +964,138 @@ fun AddTransactionScreen(
 
     val canSave = description.trim().isNotEmpty() && amountStr.toDoubleOrNull() != null && (amountStr.toDoubleOrNull() ?: 0.0) > 0
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "Edit Transaction" else "Add Transaction", fontWeight = FontWeight.W600) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Top App Bar
+        TopAppBar(
+            title = { Text(if (isEditing) "Edit Transaction" else "Add Transaction", fontWeight = FontWeight.W600) },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+            colors = TopAppBarDefaults.mediumTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface
             )
-        },
-        bottomBar = {
+        )
+
+        // Scrollable Form Content
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TypeSelector(
+                selectedType = type,
+                onTypeChange = { newType ->
+                    type = newType
+                }
+            )
+
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                placeholder = { Text("e.g., Lunch, Salary, Shopping") },
+                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = FinanceShapes.Medium
+            )
+
+            OutlinedTextField(
+                value = amountStr,
+                onValueChange = { amountStr = it.filter { c -> c.isDigit() } },
+                label = { Text("Amount (IDR)") },
+                placeholder = { Text("0") },
+                leadingIcon = {
+                    Text("Rp", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = FinanceShapes.Medium
+            )
+
+            // Issue 5 FIX: Category dropdown with proper click handling
+            CategorySelector(
+                selectedCategory = category,
+                categories = categories,
+                onCategoryChange = { category = it }
+            )
+
+            // Issue 5 FIX: Wallet Source dropdown with proper click handling
+            WalletSourceSelector(
+                selectedWalletSource = walletSource,
+                wallets = wallets,
+                onWalletSourceChange = { walletSource = it }
+            )
+
+            // Issue 4 FIX: Date/Time fields with .weight(1f) to prevent overflow
+            // Issue 5 FIX: Clickable overlay on date/time fields
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Date field with clickable overlay
+                Box(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = dateFormatter.format(selectedDate),
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        label = { Text("Date") },
+                        trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Date") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FinanceShapes.Medium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    // Transparent overlay to capture clicks
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { showDatePicker() }
+                    )
+                }
+                // Time field with clickable overlay
+                Box(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = timeFormatter.format(selectedDate),
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        label = { Text("Time") },
+                        trailingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = "Time") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FinanceShapes.Medium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { showTimePicker() }
+                    )
+                }
+            }
+
+            // Bottom Action Buttons
+            Spacer(modifier = Modifier.height(16.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 8.dp
             ) {
-                // Issue 4 FIX: Balanced action buttons (no unnecessary long button)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1053,135 +1150,11 @@ fun AddTransactionScreen(
                 }
             }
         }
-    ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                item {
-                    TypeSelector(
-                        selectedType = type,
-                        onTypeChange = { newType ->
-                            type = newType
-                        }
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Description") },
-                        placeholder = { Text("e.g., Lunch, Salary, Shopping") },
-                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = FinanceShapes.Medium
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = amountStr,
-                        onValueChange = { amountStr = it.filter { c -> c.isDigit() } },
-                        label = { Text("Amount (IDR)") },
-                        placeholder = { Text("0") },
-                        leadingIcon = {
-                            Text("Rp", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = FinanceShapes.Medium
-                    )
-                }
-
-                // Issue 5 FIX: Category dropdown with proper click handling
-                item {
-                    CategorySelector(
-                        selectedCategory = category,
-                        categories = categories,
-                        onCategoryChange = { category = it }
-                    )
-                }
-
-                // Issue 5 FIX: Wallet Source dropdown with proper click handling
-                item {
-                    WalletSourceSelector(
-                        selectedWalletSource = walletSource,
-                        wallets = wallets,
-                        onWalletSourceChange = { walletSource = it }
-                    )
-                }
-
-                // Issue 4 FIX: Date/Time fields with .weight(1f) to prevent overflow
-                // Issue 5 FIX: Clickable overlay on date/time fields
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Date field with clickable overlay
-                        Box(modifier = Modifier.weight(1f)) {
-                            OutlinedTextField(
-                                value = dateFormatter.format(selectedDate),
-                                onValueChange = {},
-                                readOnly = true,
-                                enabled = false,
-                                label = { Text("Date") },
-                                trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Date") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = FinanceShapes.Medium,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            )
-                            // Transparent overlay to capture clicks
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clickable { showDatePicker() }
-                            )
-                        }
-                        // Time field with clickable overlay
-                        Box(modifier = Modifier.weight(1f)) {
-                            OutlinedTextField(
-                                value = timeFormatter.format(selectedDate),
-                                onValueChange = {},
-                                readOnly = true,
-                                enabled = false,
-                                label = { Text("Time") },
-                                trailingIcon = { Icon(Icons.Filled.AccessTime, contentDescription = "Time") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = FinanceShapes.Medium,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clickable { showTimePicker() }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+    }
 }
 
 // =====================================================================
 // TYPE SELECTOR
-// =====================================================================
 @Composable
 fun TypeSelector(
     selectedType: Transaction.Type,
