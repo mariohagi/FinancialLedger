@@ -124,7 +124,10 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 
 import com.example.catatankeuangan.ui.design.CategoryIcons
 import com.example.catatankeuangan.ui.design.FinanceDateFormatter
@@ -1203,6 +1206,7 @@ fun AddTransactionScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = FinanceShapes.Medium
@@ -1815,6 +1819,7 @@ fun SettingsScreen(
         ) {
             Column {
                 SettingsSection(title = "Data") {
+                    // CSV Export
                     SettingsItem(
                         title = "Export Data",
                         subtitle = "Export transactions to CSV",
@@ -1822,6 +1827,38 @@ fun SettingsScreen(
                         trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
                         onClick = { exportData(context, repo, scope) }
                     )
+                    // CSV Import (Task 5 extension)
+                    var showImportDialog by remember { mutableStateOf(false) }
+                    var importedCsvText by remember { mutableStateOf<String?>(null) }
+                    val csvPickerLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent()
+                    ) { uri: Uri? ->
+                        uri?.let {
+                            val text = context.contentResolver.openInputStream(it)
+                                ?.bufferedReader(Charsets.UTF_8)?.readText()
+                            if (text != null) {
+                                importedCsvText = text
+                                showImportDialog = true
+                            } else {
+                                android.widget.Toast.makeText(context, "Failed to read file", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    SettingsItem(
+                        title = "Import from CSV",
+                        subtitle = "Import transactions from exported CSV file",
+                        leadingIcon = { Icon(Icons.Filled.FileUpload, contentDescription = "") },
+                        trailingIcon = { Icon(Icons.Filled.ChevronRight, contentDescription = "") },
+                        onClick = { csvPickerLauncher.launch("text/*") }
+                    )
+                    if (showImportDialog && importedCsvText != null) {
+                        CsvImportDialog(
+                            csvText = importedCsvText!!,
+                            repo = repo,
+                            scope = scope,
+                            onDismiss = { showImportDialog = false; importedCsvText = null }
+                        )
+                    }
                     SettingsItem(
                         title = "Clear All Data",
                         subtitle = "Delete all transactions and categories",
@@ -2226,6 +2263,145 @@ fun exportData(context: Context, repo: FinanceRepository, scope: kotlinx.corouti
             }
         }
     }
+}
+
+// =====================================================================
+// CSV IMPORT DIALOG (Task 5 — Import from CSV)
+// CSV format matches exportData: ID,Description,Amount,Type,Category,Wallet Source,Date
+// =====================================================================
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CsvImportDialog(
+    csvText: String,
+    repo: FinanceRepository,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onDismiss: () -> Unit
+) {
+    data class ParsedRow(
+        val description: String,
+        val amount: Double,
+        val type: Transaction.Type,
+        val category: String,
+        val walletSource: String,
+        val date: java.util.Date,
+        val fingerprint: String  // for duplicate detection
+    )
+
+    // Parse CSV
+    val lines = csvText.lines().filter { it.isNotBlank() }
+    val header = lines.firstOrNull()?.trim()
+    val expectedHeader = "ID,Description,Amount,Type,Category,Wallet Source,Date"
+    val headerOk = header?.startsWith("ID,") == true
+
+    val parsed = mutableListOf<ParsedRow>()
+    val errors = mutableListOf<String>()
+
+    if (headerOk) {
+        lines.drop(1).forEachIndexed { i, line ->
+            val parts = line.split(",")
+            if (parts.size < 7) { errors.add("Row ${i+2}: too few columns"); return@forEachIndexed }
+            runCatching {
+                val desc = parts[1].trim()
+                val amount = parts[2].trim().toDouble()
+                val type = if (parts[3].trim().uppercase().contains("INCOME"))
+                    Transaction.Type.INCOME else Transaction.Type.EXPENSE
+                val cat = parts[4].trim()
+                val wallet = parts[5].trim()
+                val date = java.util.Date(parts[6].trim().toLong())
+                val fp = "${desc}|${amount}|${type}|${cat}|${wallet}|${date.time}"
+                parsed.add(ParsedRow(desc, amount, type, cat, wallet, date, fp))
+            }.onFailure { errors.add("Row ${i+2}: ${it.message}") }
+        }
+    }
+
+    // State
+    var importing by remember { mutableStateOf(false) }
+    var importResult by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = { if (!importing) onDismiss() },
+        title = { Text("Import from CSV") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!headerOk) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Warning, contentDescription = "", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                        Text("Unrecognized CSV format. Expected header:\n$expectedHeader",
+                            color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                } else if (importResult != null) {
+                    Text(importResult!!, style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Text("Found ${parsed.size} valid row(s)${if (errors.isNotEmpty()) ", ${errors.size} error(s)" else ""}.",
+                        style = MaterialTheme.typography.bodyMedium)
+                    if (errors.isNotEmpty()) {
+                        Text(errors.take(5).joinToString("\n"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error)
+                    }
+                    if (parsed.isNotEmpty()) {
+                        Text("Duplicates: detected by description + amount + date. Existing matches will be skipped.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (headerOk && parsed.isNotEmpty() && importResult == null) {
+                Button(
+                    onClick = {
+                        importing = true
+                        scope.launch(Dispatchers.IO) {
+                            val existing = repo.getAllTransactionsList()
+                            val existingFps = existing.map {
+                                "${it.description}|${it.amount}|${it.type}|${it.category}|${it.walletSource}|${it.date.time}"
+                            }.toSet()
+                            val toImport = parsed.filter { it.fingerprint !in existingFps }
+                            val skipped = parsed.size - toImport.size
+                            var succeeded = 0
+                            var failed = 0
+                            // Use DB transaction for atomicity
+                            repo.db.runInTransaction {
+                                toImport.forEach { row ->
+                                    runCatching {
+                                        val tx = Transaction(
+                                            id = 0,
+                                            description = row.description,
+                                            amount = row.amount,
+                                            type = row.type,
+                                            category = row.category,
+                                            walletSource = row.walletSource,
+                                            date = row.date
+                                        )
+                                        // Must run blocking in the transaction lambda
+                                        kotlinx.coroutines.runBlocking { repo.insert(tx) }
+                                        succeeded++
+                                    }.onFailure { failed++ }
+                                }
+                            }
+                            val msg = "Import complete: $succeeded imported, $skipped duplicate(s) skipped" +
+                                if (failed > 0) ", $failed failed." else "."
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                importResult = msg
+                                importing = false
+                            }
+                        }
+                    },
+                    enabled = !importing
+                ) {
+                    if (importing) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    else Text("Import ${parsed.size} rows")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { if (!importing) onDismiss() }) {
+                Text(if (importResult != null) "Close" else "Cancel")
+            }
+        }
+    )
 }
 
 fun showClearDataDialog(context: Context, repo: FinanceRepository, scope: kotlinx.coroutines.CoroutineScope) {
