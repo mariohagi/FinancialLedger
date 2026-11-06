@@ -2135,7 +2135,7 @@ fun SettingsScreen(
                                         .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
                                         .clickable {
                                             customBg.value = c
-                                            ColorCustomizerPrefs.saveBackgroundColor(context, c)
+                                            ColorCustomizerPrefs.saveBackgroundColor(context, c, themePreference.value == 1)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -2159,7 +2159,7 @@ fun SettingsScreen(
                                         .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
                                         .clickable {
                                             customBg.value = c
-                                            ColorCustomizerPrefs.saveBackgroundColor(context, c)
+                                            ColorCustomizerPrefs.saveBackgroundColor(context, c, themePreference.value == 1)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -2187,7 +2187,7 @@ fun SettingsScreen(
                                         .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
                                         .clickable {
                                             customBox.value = c
-                                            ColorCustomizerPrefs.saveBoxColor(context, c)
+                                            ColorCustomizerPrefs.saveBoxColor(context, c, themePreference.value == 1)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -2211,7 +2211,7 @@ fun SettingsScreen(
                                         .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
                                         .clickable {
                                             customBox.value = c
-                                            ColorCustomizerPrefs.saveBoxColor(context, c)
+                                            ColorCustomizerPrefs.saveBoxColor(context, c, themePreference.value == 1)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -3067,9 +3067,10 @@ fun FinancialLedgerApp() {
 
     // Issue 7 FIX: Theme preference drives MaterialTheme colorScheme directly via Compose state
     val themePreference = rememberThemePreference(context)
-    val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
-    val customBg = remember { mutableStateOf(ColorCustomizerPrefs.loadBackgroundColor(context)) }
-    val customBox = remember { mutableStateOf(ColorCustomizerPrefs.loadBoxColor(context)) }
+        val isDark = themePreference.value == 1
+        val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
+        val customBg = remember { mutableStateOf(ColorCustomizerPrefs.loadBackgroundColor(context, isDark)) }
+        val customBox = remember { mutableStateOf(ColorCustomizerPrefs.loadBoxColor(context, isDark)) }
     val dynamicText = customBg.value?.let { ColorCustomizerPrefs.getContrastTextColor(it) }
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme.copy(
