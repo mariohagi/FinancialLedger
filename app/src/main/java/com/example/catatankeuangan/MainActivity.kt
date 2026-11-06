@@ -282,8 +282,8 @@ fun BalanceCard(
                             label = wallet.name,
                             amount = walletBalance,
                             icon = getWalletIcon(wallet.type),
-                            iconColor = FinanceColors.IncomeGreen,
-                            containerColor = FinanceColors.IncomeGreenContainer,
+                            iconColor = MaterialTheme.colorScheme.primary,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier.width(160.dp)
                         )
                     }
@@ -1683,7 +1683,8 @@ fun SettingsScreen(
     themePreference: MutableState<Int>,
     currency: MutableState<com.example.catatankeuangan.CurrencyInfo>,
     palettePreference: MutableState<com.example.catatankeuangan.PaletteInfo>,
-    customBg: MutableState<Color?>
+    customBg: MutableState<Color?>,
+    customText: MutableState<Color?>
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1815,6 +1816,37 @@ fun SettingsScreen(
                             }) {
                                 Text("Apply")
                             }
+                        }
+                        // Custom text color input
+                        var textHex by remember { mutableStateOf("") }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = textHex,
+                                onValueChange = { textHex = it },
+                                label = { Text("Text HEX (e.g. #1A1A1A)") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            Button(onClick = {
+                                try {
+                                    val c = Color(android.graphics.Color.parseColor(textHex.trim()))
+                                    customText.value = c
+                                    ColorPalette.saveCustomText(context, c)
+                                } catch (e: Exception) { /* ignore */ }
+                            }) {
+                                Text("Apply")
+                            }
+                        }
+                        TextButton(onClick = {
+                            customText.value = null
+                            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                                .edit().remove("custom_text").apply()
+                        }) {
+                            Text("Reset Text Color")
                         }
                         TextButton(onClick = {
                             customBg.value = null
@@ -2657,6 +2689,7 @@ fun FinancialLedgerApp() {
     val themePreference = rememberThemePreference(context)
     val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
     val customBg = remember { mutableStateOf(ColorPalette.loadCustomBackground(context)) }
+    val customText = remember { mutableStateOf(ColorPalette.loadCustomText(context)) }
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme.copy(
             primary = palettePreference.value.primary,
@@ -2667,6 +2700,8 @@ fun FinancialLedgerApp() {
             surface = palettePreference.value.surfaceTint ?: LightColorScheme.surface,
             surfaceVariant = palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceVariant,
             surfaceContainer = palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceContainer,
+            onSurface = customText.value ?: LightColorScheme.onSurface,
+            onSurfaceVariant = customText.value ?: LightColorScheme.onSurfaceVariant,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
             surfaceTint = palettePreference.value.primary
@@ -2815,7 +2850,8 @@ fun FinancialLedgerApp() {
                             themePreference = themePreference,
                             currency = currency,
                             palettePreference = palettePreference,
-                            customBg = customBg
+                            customBg = customBg,
+                            customText = customText
                         )
                     }
                 }

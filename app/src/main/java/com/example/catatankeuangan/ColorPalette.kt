@@ -122,6 +122,7 @@ object ColorPalette {
 
     private const val PREF_PALETTE = "palette_id"
     private const val PREF_CUSTOM_BG = "custom_bg"
+    private const val PREF_CUSTOM_TEXT = "custom_text"
     private const val DEFAULT_PALETTE = "default"
 
     fun save(context: Context, palette: PaletteInfo) {
@@ -136,9 +137,26 @@ object ColorPalette {
             .edit().putString(PREF_CUSTOM_BG, hex).apply()
     }
 
+    fun saveCustomText(context: Context, color: Color) {
+        val argb = (0xFF shl 24) or (color.red * 255).toInt() shl 16 or (color.green * 255).toInt() shl 8 or (color.blue * 255).toInt()
+        val hex = String.format("#%06X", (0xFFFFFF and argb))
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            .edit().putString(PREF_CUSTOM_TEXT, hex).apply()
+    }
+
     fun loadCustomBackground(context: Context): Color? {
         val hex = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
             .getString(PREF_CUSTOM_BG, null) ?: return null
+        return try {
+            Color(android.graphics.Color.parseColor(hex))
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+
+    fun loadCustomText(context: Context): Color? {
+        val hex = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            .getString(PREF_CUSTOM_TEXT, null) ?: return null
         return try {
             Color(android.graphics.Color.parseColor(hex))
         } catch (e: IllegalArgumentException) {
