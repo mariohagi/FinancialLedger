@@ -290,6 +290,16 @@ fun BalanceCard(
                             modifier = Modifier.width(160.dp)
                         )
                     }
+                    item {
+                        WalletSourceCard(
+                            label = "Add Wallet",
+                            amount = 0.0,
+                            icon = Icons.Filled.Add,
+                            iconColor = MaterialTheme.colorScheme.primary,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier.width(160.dp)
+                        )
+                    }
                 }
             }
         }
