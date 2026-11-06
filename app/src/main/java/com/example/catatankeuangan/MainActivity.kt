@@ -1182,6 +1182,7 @@ fun CategoryDetailsScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(tx.description.ifBlank { "Transaction" }, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.W500)
                                 Text(tx.date.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Wallet: ${tx.walletSource}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Text(
                                 FinanceFormatter.formatIDR(Math.abs(tx.amount)),
