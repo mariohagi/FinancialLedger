@@ -53,17 +53,6 @@ object ColorPalette {
             cardContainerTint = Color(0xFFF3E8FF)
         ),
         PaletteInfo(
-            id = "teal",
-            name = "Teal",
-            primary = Color(0xFF00796B),
-            primaryContainer = Color(0xFFB2DFDB),
-            secondary = Color(0xFF00897B),
-            secondaryContainer = Color(0xFF80CBC4),
-            backgroundTint = Color(0xFFF3FAF9),
-            surfaceTint = Color(0xFFFFFFFF),
-            cardContainerTint = Color(0xFFE0F2F1)
-        ),
-        PaletteInfo(
             id = "green",
             name = "Green",
             primary = Color(0xFF2E7D32),
