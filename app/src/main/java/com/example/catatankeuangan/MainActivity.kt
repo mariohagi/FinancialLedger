@@ -1679,7 +1679,8 @@ fun SettingsScreen(
     repo: FinanceRepository,
     shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
     themePreference: MutableState<Int>,
-    currency: MutableState<com.example.catatankeuangan.CurrencyInfo>
+    currency: MutableState<com.example.catatankeuangan.CurrencyInfo>,
+    palettePreference: MutableState<com.example.catatankeuangan.PaletteInfo>
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -2563,12 +2564,32 @@ fun FinancialLedgerApp() {
 
     // Issue 7 FIX: Theme preference drives MaterialTheme colorScheme directly via Compose state
     val themePreference = rememberThemePreference(context)
+    val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
     val colorScheme = when (themePreference.value) {
-        0 -> LightColorScheme  // Light
-        1 -> DarkColorScheme   // Dark
-        else -> {              // System default
+        0 -> LightColorScheme.copy(
+            primary = palettePreference.value.primary,
+            primaryContainer = palettePreference.value.primaryContainer,
+            onPrimary = palettePreference.value.onPrimary,
+            onPrimaryContainer = palettePreference.value.onPrimaryContainer,
+            surfaceTint = palettePreference.value.primary
+        )
+        1 -> DarkColorScheme.copy(
+            primary = palettePreference.value.primary,
+            primaryContainer = palettePreference.value.primaryContainer,
+            onPrimary = palettePreference.value.onPrimary,
+            onPrimaryContainer = palettePreference.value.onPrimaryContainer,
+            surfaceTint = palettePreference.value.primary
+        )
+        else -> {
             val isSystemDark = LocalConfiguration.current.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-            if (isSystemDark) DarkColorScheme else LightColorScheme
+            val base = if (isSystemDark) DarkColorScheme else LightColorScheme
+            base.copy(
+                primary = palettePreference.value.primary,
+                primaryContainer = palettePreference.value.primaryContainer,
+                onPrimary = palettePreference.value.onPrimary,
+                onPrimaryContainer = palettePreference.value.onPrimaryContainer,
+                surfaceTint = palettePreference.value.primary
+            )
         }
     }
 
@@ -2671,7 +2692,8 @@ fun FinancialLedgerApp() {
                             repo = repo,
                             shareIntentLauncher = shareIntentLauncher,
                             themePreference = themePreference,
-                            currency = currency
+                            currency = currency,
+                            palettePreference = palettePreference
                         )
                     }
                 }
