@@ -2218,7 +2218,13 @@ fun SettingsScreen(
                                                 Icon(Icons.Filled.Check, contentDescription = "Selected", tint = p.onPrimary)
                                             }
                                         }
-                                        Text(p.name, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                        Text(
+                                            p.name,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 1,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
                                     }
                                 }
                             }
