@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -800,7 +801,7 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
         TopAppBar(
             title = { Text("Transactions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.W600) },
             colors = TopAppBarDefaults.mediumTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = MaterialTheme.colorScheme.background,
                 titleContentColor = MaterialTheme.colorScheme.onSurface
             )
         )
@@ -1793,67 +1794,79 @@ fun SettingsScreen(
                         }) {
                             Text("Reset to Default")
                         }
-                        // Custom background color input
-                        var bgHex by remember { mutableStateOf("") }
+                        // Background color swatches (like color palette)
+                        val bgColors = listOf(
+                            Color(0xFFFAFCFC), Color(0xFFF4F8FD), Color(0xFFFFFFFF),
+                            Color(0xFF121212), Color(0xFF1A1A2E), Color(0xFF0D1117),
+                            Color(0xFFE8F5E9), Color(0xFFE3F2FD), Color(0xFFFCE4EC)
+                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedTextField(
-                                value = bgHex,
-                                onValueChange = { bgHex = it },
-                                label = { Text("Background HEX (e.g. #F4F8FD)") },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                            Button(onClick = {
-                                try {
-                                    val c = Color(android.graphics.Color.parseColor(bgHex.trim()))
-                                    customBg.value = c
-                                    ColorPalette.saveCustomBackground(context, c)
-                                } catch (e: Exception) { /* ignore */ }
-                            }) {
-                                Text("Apply")
-                            }
-                        }
-                            // Box color input
-                            var boxHex by remember { mutableStateOf("") }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = boxHex,
-                                    onValueChange = { boxHex = it },
-                                    label = { Text("Box HEX (e.g. #FFFFFF)") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                                Button(onClick = {
-                                    try {
-                                        val c = Color(android.graphics.Color.parseColor(boxHex.trim()))
-                                        customBox.value = c
-                                        ColorCustomizerPrefs.saveBoxColor(context, c)
-                                    } catch (e: Exception) { /* ignore */ }
-                                }) {
-                                    Text("Apply")
+                            bgColors.forEach { c ->
+                                val selected = customBg.value == c
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(c)
+                                        .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
+                                        .clickable {
+                                            customBg.value = c
+                                            ColorCustomizerPrefs.saveBackgroundColor(context, c)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (selected) {
+                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c))
+                                    }
                                 }
                             }
-                            TextButton(onClick = {
-                                customBox.value = null
-                                context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                                    .edit().remove("custom_box").apply()
-                            }) {
-                                Text("Reset Box")
+                        }
+                        // Box color swatches
+                        val boxColors = listOf(
+                            Color(0xFFFEFEFE), Color(0xFFFFFFFF), Color(0xFFE0E0E0),
+                            Color(0xFF2A2A2A), Color(0xFF1E1E1E), Color(0xFF333333),
+                            Color(0xFFD1F5EB), Color(0xFFD1E4FF), Color(0xFFEADDFF)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            boxColors.forEach { c ->
+                                val selected = customBox.value == c
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(c)
+                                        .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
+                                        .clickable {
+                                            customBox.value = c
+                                            ColorCustomizerPrefs.saveBoxColor(context, c)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (selected) {
+                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c))
+                                    }
+                                }
                             }
+                        }
                         TextButton(onClick = {
                             customBg.value = null
                             context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                                .edit().remove("custom_bg").apply()
+                                .edit().remove("custom_bg_color").apply()
                         }) {
                             Text("Reset Background")
+                        }
+                        TextButton(onClick = {
+                            customBox.value = null
+                            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                                .edit().remove("custom_box_color").apply()
+                        }) {
+                            Text("Reset Box")
                         }
                     }
                 }
