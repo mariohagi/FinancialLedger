@@ -1682,7 +1682,8 @@ fun SettingsScreen(
     shareIntentLauncher: androidx.activity.result.ActivityResultLauncher<Intent>,
     themePreference: MutableState<Int>,
     currency: MutableState<com.example.catatankeuangan.CurrencyInfo>,
-    palettePreference: MutableState<com.example.catatankeuangan.PaletteInfo>
+    palettePreference: MutableState<com.example.catatankeuangan.PaletteInfo>,
+    customBg: MutableState<Color?>
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1790,6 +1791,37 @@ fun SettingsScreen(
                             ColorPalette.save(context, def)
                         }) {
                             Text("Reset to Default")
+                        }
+                        // Custom background color input
+                        var bgHex by remember { mutableStateOf("") }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = bgHex,
+                                onValueChange = { bgHex = it },
+                                label = { Text("Background HEX (e.g. #F4F8FD)") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            Button(onClick = {
+                                try {
+                                    val c = Color(android.graphics.Color.parseColor(bgHex.trim()))
+                                    customBg.value = c
+                                    ColorPalette.saveCustomBackground(context, c)
+                                } catch (e: Exception) { /* ignore */ }
+                            }) {
+                                Text("Apply")
+                            }
+                        }
+                        TextButton(onClick = {
+                            customBg.value = null
+                            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                                .edit().remove("custom_bg").apply()
+                        }) {
+                            Text("Reset Background")
                         }
                     }
                 }
@@ -2624,13 +2656,14 @@ fun FinancialLedgerApp() {
     // Issue 7 FIX: Theme preference drives MaterialTheme colorScheme directly via Compose state
     val themePreference = rememberThemePreference(context)
     val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
+    val customBg = remember { mutableStateOf(ColorPalette.loadCustomBackground(context)) }
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme.copy(
             primary = palettePreference.value.primary,
             primaryContainer = palettePreference.value.primaryContainer,
             secondary = palettePreference.value.secondary,
             secondaryContainer = palettePreference.value.secondaryContainer,
-            background = palettePreference.value.backgroundTint ?: LightColorScheme.background,
+            background = customBg.value ?: (palettePreference.value.backgroundTint ?: LightColorScheme.background),
             surface = palettePreference.value.surfaceTint ?: LightColorScheme.surface,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
@@ -2653,7 +2686,7 @@ fun FinancialLedgerApp() {
                 primaryContainer = palettePreference.value.primaryContainer,
                 secondary = palettePreference.value.secondary,
                 secondaryContainer = palettePreference.value.secondaryContainer,
-                background = if (isSystemDark) DarkColorScheme.background else (palettePreference.value.backgroundTint ?: LightColorScheme.background),
+                background = if (isSystemDark) DarkColorScheme.background else (customBg.value ?: (palettePreference.value.backgroundTint ?: LightColorScheme.background)),
                 surface = if (isSystemDark) DarkColorScheme.surface else (palettePreference.value.surfaceTint ?: LightColorScheme.surface),
                 onPrimary = palettePreference.value.onPrimary,
                 onPrimaryContainer = palettePreference.value.onPrimaryContainer,
@@ -2777,7 +2810,8 @@ fun FinancialLedgerApp() {
                             shareIntentLauncher = shareIntentLauncher,
                             themePreference = themePreference,
                             currency = currency,
-                            palettePreference = palettePreference
+                            palettePreference = palettePreference,
+                            customBg = customBg
                         )
                     }
                 }
