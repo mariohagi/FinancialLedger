@@ -10,6 +10,8 @@ data class PaletteInfo(
     val primaryContainer: Color,
     val secondary: Color,
     val secondaryContainer: Color,
+    val backgroundTint: Color? = null,
+    val surfaceTint: Color? = null,
     val onPrimary: Color = Color.White,
     val onPrimaryContainer: Color = Color(0xFF00211B)
 )
@@ -22,7 +24,9 @@ object ColorPalette {
             primary = Color(0xFF006D5B),
             primaryContainer = Color(0xFFD1F5EB),
             secondary = Color(0xFF4A6FA5),
-            secondaryContainer = Color(0xFFD6E4F0)
+            secondaryContainer = Color(0xFFD6E4F0),
+            backgroundTint = Color(0xFFFAFCFC),
+            surfaceTint = Color(0xFFFEFEFE)
         ),
         PaletteInfo(
             id = "blue",
@@ -30,7 +34,9 @@ object ColorPalette {
             primary = Color(0xFF1565C0),
             primaryContainer = Color(0xFFD1E4FF),
             secondary = Color(0xFF0288D1),
-            secondaryContainer = Color(0xFFB3E5FC)
+            secondaryContainer = Color(0xFFB3E5FC),
+            backgroundTint = Color(0xFFF4F8FD),
+            surfaceTint = Color(0xFFFFFFFF)
         ),
         PaletteInfo(
             id = "purple",
@@ -38,7 +44,9 @@ object ColorPalette {
             primary = Color(0xFF6750A4),
             primaryContainer = Color(0xFFEADDFF),
             secondary = Color(0xFF7D5260),
-            secondaryContainer = Color(0xFFFFD8E4)
+            secondaryContainer = Color(0xFFFFD8E4),
+            backgroundTint = Color(0xFFFCF8FF),
+            surfaceTint = Color(0xFFFEF7FF)
         ),
         PaletteInfo(
             id = "teal",
@@ -46,7 +54,9 @@ object ColorPalette {
             primary = Color(0xFF00796B),
             primaryContainer = Color(0xFFB2DFDB),
             secondary = Color(0xFF00897B),
-            secondaryContainer = Color(0xFF80CBC4)
+            secondaryContainer = Color(0xFF80CBC4),
+            backgroundTint = Color(0xFFF3FAF9),
+            surfaceTint = Color(0xFFFFFFFF)
         ),
         PaletteInfo(
             id = "green",
@@ -54,7 +64,9 @@ object ColorPalette {
             primary = Color(0xFF2E7D32),
             primaryContainer = Color(0xFFC8E6C9),
             secondary = Color(0xFF388E3C),
-            secondaryContainer = Color(0xFFA5D6A7)
+            secondaryContainer = Color(0xFFA5D6A7),
+            backgroundTint = Color(0xFFF4F9F4),
+            surfaceTint = Color(0xFFFFFFFF)
         ),
         PaletteInfo(
             id = "orange",
@@ -62,7 +74,9 @@ object ColorPalette {
             primary = Color(0xFFE65100),
             primaryContainer = Color(0xFFFFCCBC),
             secondary = Color(0xFFEF6C00),
-            secondaryContainer = Color(0xFFFFE0B2)
+            secondaryContainer = Color(0xFFFFE0B2),
+            backgroundTint = Color(0xFFFFF8F5),
+            surfaceTint = Color(0xFFFFFFFF)
         ),
         PaletteInfo(
             id = "red",
@@ -70,7 +84,9 @@ object ColorPalette {
             primary = Color(0xFFC62828),
             primaryContainer = Color(0xFFFFCDD2),
             secondary = Color(0xFFD32F2F),
-            secondaryContainer = Color(0xFFFFEBEE)
+            secondaryContainer = Color(0xFFFFEBEE),
+            backgroundTint = Color(0xFFFFF5F5),
+            surfaceTint = Color(0xFFFFFFFF)
         ),
         PaletteInfo(
             id = "pink",
@@ -78,7 +94,9 @@ object ColorPalette {
             primary = Color(0xFFAD1457),
             primaryContainer = Color(0xFFF8BBD0),
             secondary = Color(0xFFC2185B),
-            secondaryContainer = Color(0xFFFCE4EC)
+            secondaryContainer = Color(0xFFFCE4EC),
+            backgroundTint = Color(0xFFFFF0F5),
+            surfaceTint = Color(0xFFFFFFFF)
         ),
         PaletteInfo(
             id = "indigo",
@@ -86,7 +104,9 @@ object ColorPalette {
             primary = Color(0xFF283593),
             primaryContainer = Color(0xFFC5CAE9),
             secondary = Color(0xFF3F51B5),
-            secondaryContainer = Color(0xFFE8EAF6)
+            secondaryContainer = Color(0xFFE8EAF6),
+            backgroundTint = Color(0xFFF3F4FB),
+            surfaceTint = Color(0xFFFFFFFF)
         )
     )
 

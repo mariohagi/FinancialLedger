@@ -2630,6 +2630,8 @@ fun FinancialLedgerApp() {
             primaryContainer = palettePreference.value.primaryContainer,
             secondary = palettePreference.value.secondary,
             secondaryContainer = palettePreference.value.secondaryContainer,
+            background = palettePreference.value.backgroundTint ?: LightColorScheme.background,
+            surface = palettePreference.value.surfaceTint ?: LightColorScheme.surface,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
             surfaceTint = palettePreference.value.primary
@@ -2651,6 +2653,8 @@ fun FinancialLedgerApp() {
                 primaryContainer = palettePreference.value.primaryContainer,
                 secondary = palettePreference.value.secondary,
                 secondaryContainer = palettePreference.value.secondaryContainer,
+                background = if (isSystemDark) DarkColorScheme.background else (palettePreference.value.backgroundTint ?: LightColorScheme.background),
+                surface = if (isSystemDark) DarkColorScheme.surface else (palettePreference.value.surfaceTint ?: LightColorScheme.surface),
                 onPrimary = palettePreference.value.onPrimary,
                 onPrimaryContainer = palettePreference.value.onPrimaryContainer,
                 surfaceTint = palettePreference.value.primary
