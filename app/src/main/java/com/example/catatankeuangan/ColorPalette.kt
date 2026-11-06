@@ -12,6 +12,7 @@ data class PaletteInfo(
     val secondaryContainer: Color,
     val backgroundTint: Color? = null,
     val surfaceTint: Color? = null,
+    val cardContainerTint: Color? = null,
     val onPrimary: Color = Color.White,
     val onPrimaryContainer: Color = Color(0xFF00211B)
 )
@@ -26,7 +27,8 @@ object ColorPalette {
             secondary = Color(0xFF4A6FA5),
             secondaryContainer = Color(0xFFD6E4F0),
             backgroundTint = Color(0xFFFAFCFC),
-            surfaceTint = Color(0xFFFEFEFE)
+            surfaceTint = Color(0xFFFEFEFE),
+            cardContainerTint = Color(0xFFE8F8F5)
         ),
         PaletteInfo(
             id = "blue",
@@ -36,7 +38,8 @@ object ColorPalette {
             secondary = Color(0xFF0288D1),
             secondaryContainer = Color(0xFFB3E5FC),
             backgroundTint = Color(0xFFF4F8FD),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFE3F2FD)
         ),
         PaletteInfo(
             id = "purple",
@@ -46,7 +49,8 @@ object ColorPalette {
             secondary = Color(0xFF7D5260),
             secondaryContainer = Color(0xFFFFD8E4),
             backgroundTint = Color(0xFFFCF8FF),
-            surfaceTint = Color(0xFFFEF7FF)
+            surfaceTint = Color(0xFFFEF7FF),
+            cardContainerTint = Color(0xFFF3E8FF)
         ),
         PaletteInfo(
             id = "teal",
@@ -56,7 +60,8 @@ object ColorPalette {
             secondary = Color(0xFF00897B),
             secondaryContainer = Color(0xFF80CBC4),
             backgroundTint = Color(0xFFF3FAF9),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFE0F2F1)
         ),
         PaletteInfo(
             id = "green",
@@ -66,7 +71,8 @@ object ColorPalette {
             secondary = Color(0xFF388E3C),
             secondaryContainer = Color(0xFFA5D6A7),
             backgroundTint = Color(0xFFF4F9F4),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFE8F5E9)
         ),
         PaletteInfo(
             id = "orange",
@@ -76,7 +82,8 @@ object ColorPalette {
             secondary = Color(0xFFEF6C00),
             secondaryContainer = Color(0xFFFFE0B2),
             backgroundTint = Color(0xFFFFF8F5),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFFFF3E0)
         ),
         PaletteInfo(
             id = "red",
@@ -86,7 +93,8 @@ object ColorPalette {
             secondary = Color(0xFFD32F2F),
             secondaryContainer = Color(0xFFFFEBEE),
             backgroundTint = Color(0xFFFFF5F5),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFFFEBEE)
         ),
         PaletteInfo(
             id = "pink",
@@ -96,7 +104,8 @@ object ColorPalette {
             secondary = Color(0xFFC2185B),
             secondaryContainer = Color(0xFFFCE4EC),
             backgroundTint = Color(0xFFFFF0F5),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFFCE4EC)
         ),
         PaletteInfo(
             id = "indigo",
@@ -106,7 +115,8 @@ object ColorPalette {
             secondary = Color(0xFF3F51B5),
             secondaryContainer = Color(0xFFE8EAF6),
             backgroundTint = Color(0xFFF3F4FB),
-            surfaceTint = Color(0xFFFFFFFF)
+            surfaceTint = Color(0xFFFFFFFF),
+            cardContainerTint = Color(0xFFE8EAF6)
         )
     )
 
