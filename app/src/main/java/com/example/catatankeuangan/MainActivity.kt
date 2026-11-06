@@ -2628,6 +2628,8 @@ fun FinancialLedgerApp() {
         0 -> LightColorScheme.copy(
             primary = palettePreference.value.primary,
             primaryContainer = palettePreference.value.primaryContainer,
+            secondary = palettePreference.value.secondary,
+            secondaryContainer = palettePreference.value.secondaryContainer,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
             surfaceTint = palettePreference.value.primary
@@ -2635,6 +2637,8 @@ fun FinancialLedgerApp() {
         1 -> DarkColorScheme.copy(
             primary = palettePreference.value.primary,
             primaryContainer = palettePreference.value.primaryContainer,
+            secondary = palettePreference.value.secondary,
+            secondaryContainer = palettePreference.value.secondaryContainer,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
             surfaceTint = palettePreference.value.primary
@@ -2645,6 +2649,8 @@ fun FinancialLedgerApp() {
             base.copy(
                 primary = palettePreference.value.primary,
                 primaryContainer = palettePreference.value.primaryContainer,
+                secondary = palettePreference.value.secondary,
+                secondaryContainer = palettePreference.value.secondaryContainer,
                 onPrimary = palettePreference.value.onPrimary,
                 onPrimaryContainer = palettePreference.value.onPrimaryContainer,
                 surfaceTint = palettePreference.value.primary
