@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -1733,6 +1735,63 @@ fun SettingsScreen(
                                 .show()
                         }
                     )
+                }
+            }
+        }
+
+        // Color Palette section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = FinanceShapes.Large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column {
+                SettingsSection(title = "Color Palette") {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ColorPalette.palettes.chunked(4).forEach { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                row.forEach { p ->
+                                    val selected = palettePreference.value.id == p.id
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                                .background(p.primary)
+                                                .clickable {
+                                                    palettePreference.value = p
+                                                    ColorPalette.save(context, p)
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (selected) {
+                                                Icon(Icons.Filled.Check, contentDescription = "Selected", tint = p.onPrimary)
+                                            }
+                                        }
+                                        Text(p.name, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                    }
+                                }
+                            }
+                        }
+                        TextButton(onClick = {
+                            val def = ColorPalette.fromId("default")
+                            palettePreference.value = def
+                            ColorPalette.save(context, def)
+                        }) {
+                            Text("Reset to Default")
+                        }
+                    }
                 }
             }
         }

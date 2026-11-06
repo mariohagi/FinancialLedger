@@ -29,7 +29,7 @@
 21        android:extractNativeLibs="true"
 22        android:icon="@mipmap/ic_launcher"
 22-->C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\AndroidManifest.xml:8:9-43
-23        android:label="Catatan Keuangan"
+23        android:label="Financial Ledger"
 23-->C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\AndroidManifest.xml:7:9-41
 24        android:roundIcon="@mipmap/ic_launcher_round"
 24-->C:\Users\hagi8\AppData\Local\hermes\profiles\github\cache\scratch\CatatanKeuangan\app\src\main\AndroidManifest.xml:9:9-54
