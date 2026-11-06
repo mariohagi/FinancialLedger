@@ -1794,21 +1794,18 @@ fun SettingsScreen(
                         }) {
                             Text("Reset to Default")
                         }
-                        // Background color swatches (like color palette)
-                        val bgColors = listOf(
-                            Color(0xFFFAFCFC), Color(0xFFF4F8FD), Color(0xFFFFFFFF),
-                            Color(0xFF121212), Color(0xFF1A1A2E), Color(0xFF0D1117),
-                            Color(0xFFE8F5E9), Color(0xFFE3F2FD), Color(0xFFFCE4EC)
-                        )
+                        // Background color swatches (from ColorPalette)
+                        Text("Background Color", style = MaterialTheme.typography.titleMedium)
+                        val paletteColors = ColorPalette.palettes.map { it.backgroundTint ?: it.primaryContainer }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            bgColors.forEach { c ->
+                            paletteColors.take(5).forEach { c ->
                                 val selected = customBg.value == c
                                 Box(
                                     modifier = Modifier
-                                        .size(40.dp)
+                                        .size(36.dp)
                                         .clip(CircleShape)
                                         .background(c)
                                         .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
@@ -1819,26 +1816,48 @@ fun SettingsScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (selected) {
-                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c))
+                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c), modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
                         }
-                        // Box color swatches
-                        val boxColors = listOf(
-                            Color(0xFFFEFEFE), Color(0xFFFFFFFF), Color(0xFFE0E0E0),
-                            Color(0xFF2A2A2A), Color(0xFF1E1E1E), Color(0xFF333333),
-                            Color(0xFFD1F5EB), Color(0xFFD1E4FF), Color(0xFFEADDFF)
-                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            boxColors.forEach { c ->
+                            paletteColors.drop(5).forEach { c ->
+                                val selected = customBg.value == c
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(c)
+                                        .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
+                                        .clickable {
+                                            customBg.value = c
+                                            ColorCustomizerPrefs.saveBackgroundColor(context, c)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (selected) {
+                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c), modifier = Modifier.size(18.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Box color swatches (from ColorPalette)
+                        Text("Box Color", style = MaterialTheme.typography.titleMedium)
+                        val boxPaletteColors = ColorPalette.palettes.map { it.cardContainerTint ?: Color.White }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            boxPaletteColors.take(5).forEach { c ->
                                 val selected = customBox.value == c
                                 Box(
                                     modifier = Modifier
-                                        .size(40.dp)
+                                        .size(36.dp)
                                         .clip(CircleShape)
                                         .background(c)
                                         .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
@@ -1849,7 +1868,31 @@ fun SettingsScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (selected) {
-                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c))
+                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c), modifier = Modifier.size(18.dp))
+                                    }
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            boxPaletteColors.drop(5).forEach { c ->
+                                val selected = customBox.value == c
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(c)
+                                        .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape)
+                                        .clickable {
+                                            customBox.value = c
+                                            ColorCustomizerPrefs.saveBoxColor(context, c)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (selected) {
+                                        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = ColorCustomizerPrefs.getContrastTextColor(c), modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
