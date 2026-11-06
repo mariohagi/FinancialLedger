@@ -1162,11 +1162,62 @@ fun CategoryDetailsScreen(
                     }
                 }
             }
-            if (filteredTransactions.isEmpty()) {
-                item {
-                    Text("No transactions", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+            item {
+                val walletTotals = remember(filteredTransactions) {
+                    val map = mutableMapOf<String, Float>()
+                    filteredTransactions.forEach { tx ->
+                        val key = tx.walletSource.ifBlank { "Unknown" }
+                        map[key] = (map[key] ?: 0f) + Math.abs(tx.amount).toFloat()
+                    }
+                    map
                 }
-            } else {
+                if (walletTotals.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FinanceShapes.Medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Wallet Distribution", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.W600)
+                            AndroidView(
+                                factory = { ctx ->
+                                    PieChart(ctx).apply {
+                                        legend.isEnabled = true
+                                        description.isEnabled = false
+                                        setUsePercentValues(true)
+                                        setDrawEntryLabels(false)
+                                        setCenterText("By Wallet")
+                                        setCenterTextSize(12f)
+                                        setHoleRadius(50f)
+                                        setTransparentCircleRadius(55f)
+                                        setDrawCenterText(true)
+                                    }
+                                },
+                                update = { chart ->
+                                    val entries = walletTotals.map { PieEntry(it.value, it.key) }
+                                    val dataSet = PieDataSet(entries, "").apply {
+                                        colors = listOf(
+                                            AndroidColor.parseColor("#4CAF50"),
+                                            AndroidColor.parseColor("#2196F3"),
+                                            AndroidColor.parseColor("#FF9800"),
+                                            AndroidColor.parseColor("#9C27B0"),
+                                            AndroidColor.parseColor("#F44336")
+                                        )
+                                    }
+                                    chart.data = PieData(dataSet)
+                                    chart.invalidate()
+                                },
+                                modifier = Modifier.fillMaxWidth().height(200.dp)
+                            )
+                        }
+                    }
+                }
+            }
+                    if (filteredTransactions.isEmpty()) {
+                        item {
+                            Text("No transactions", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                        }
+                    } else {
                 items(filteredTransactions.size) { index ->
                     val tx = filteredTransactions[index]
                     Card(
