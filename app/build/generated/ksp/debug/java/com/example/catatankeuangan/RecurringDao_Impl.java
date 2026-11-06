@@ -102,6 +102,7 @@ public final class RecurringDao_Impl implements RecurringDao {
     switch (_value) {
       case INCOME: return "INCOME";
       case EXPENSE: return "EXPENSE";
+      case TRANSFER: return "TRANSFER";
       default: throw new IllegalArgumentException("Can't convert enum to string, unknown enum value: " + _value);
     }
   }
@@ -110,6 +111,7 @@ public final class RecurringDao_Impl implements RecurringDao {
     switch (_value) {
       case "INCOME": return Transaction.Type.INCOME;
       case "EXPENSE": return Transaction.Type.EXPENSE;
+      case "TRANSFER": return Transaction.Type.TRANSFER;
       default: throw new IllegalArgumentException("Can't convert value to enum, unknown value: " + _value);
     }
   }

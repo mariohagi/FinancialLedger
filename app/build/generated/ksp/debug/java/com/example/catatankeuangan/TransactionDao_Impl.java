@@ -54,7 +54,7 @@ public final class TransactionDao_Impl implements TransactionDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `transactions` (`id`,`description`,`amount`,`type`,`category`,`walletSource`,`date`) VALUES (nullif(?, 0),?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `transactions` (`id`,`description`,`amount`,`type`,`category`,`walletSource`,`destinationWallet`,`date`) VALUES (nullif(?, 0),?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -66,11 +66,12 @@ public final class TransactionDao_Impl implements TransactionDao {
         statement.bindString(4, __Type_enumToString(entity.getType()));
         statement.bindString(5, entity.getCategory());
         statement.bindString(6, entity.getWalletSource());
+        statement.bindString(7, entity.getDestinationWallet());
         final Long _tmp = __converters.dateToTimestamp(entity.getDate());
         if (_tmp == null) {
-          statement.bindNull(7);
+          statement.bindNull(8);
         } else {
-          statement.bindLong(7, _tmp);
+          statement.bindLong(8, _tmp);
         }
       }
     };
@@ -91,7 +92,7 @@ public final class TransactionDao_Impl implements TransactionDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `transactions` SET `id` = ?,`description` = ?,`amount` = ?,`type` = ?,`category` = ?,`walletSource` = ?,`date` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `transactions` SET `id` = ?,`description` = ?,`amount` = ?,`type` = ?,`category` = ?,`walletSource` = ?,`destinationWallet` = ?,`date` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -103,13 +104,14 @@ public final class TransactionDao_Impl implements TransactionDao {
         statement.bindString(4, __Type_enumToString(entity.getType()));
         statement.bindString(5, entity.getCategory());
         statement.bindString(6, entity.getWalletSource());
+        statement.bindString(7, entity.getDestinationWallet());
         final Long _tmp = __converters.dateToTimestamp(entity.getDate());
         if (_tmp == null) {
-          statement.bindNull(7);
+          statement.bindNull(8);
         } else {
-          statement.bindLong(7, _tmp);
+          statement.bindLong(8, _tmp);
         }
-        statement.bindLong(8, entity.getId());
+        statement.bindLong(9, entity.getId());
       }
     };
     this.__preparedStmtOfUpdateWalletSource = new SharedSQLiteStatement(__db) {
@@ -217,6 +219,7 @@ public final class TransactionDao_Impl implements TransactionDao {
       final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
       final int _cursorIndexOfCategory = CursorUtil.getColumnIndexOrThrow(_cursor, "category");
       final int _cursorIndexOfWalletSource = CursorUtil.getColumnIndexOrThrow(_cursor, "walletSource");
+      final int _cursorIndexOfDestinationWallet = CursorUtil.getColumnIndexOrThrow(_cursor, "destinationWallet");
       final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
       final List<Transaction> _result = new ArrayList<Transaction>(_cursor.getCount());
       while (_cursor.moveToNext()) {
@@ -233,6 +236,8 @@ public final class TransactionDao_Impl implements TransactionDao {
         _tmpCategory = _cursor.getString(_cursorIndexOfCategory);
         final String _tmpWalletSource;
         _tmpWalletSource = _cursor.getString(_cursorIndexOfWalletSource);
+        final String _tmpDestinationWallet;
+        _tmpDestinationWallet = _cursor.getString(_cursorIndexOfDestinationWallet);
         final Date _tmpDate;
         final Long _tmp;
         if (_cursor.isNull(_cursorIndexOfDate)) {
@@ -246,7 +251,7 @@ public final class TransactionDao_Impl implements TransactionDao {
         } else {
           _tmpDate = _tmp_1;
         }
-        _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDate);
+        _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDestinationWallet,_tmpDate);
         _result.add(_item);
       }
       return _result;
@@ -272,6 +277,7 @@ public final class TransactionDao_Impl implements TransactionDao {
           final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
           final int _cursorIndexOfCategory = CursorUtil.getColumnIndexOrThrow(_cursor, "category");
           final int _cursorIndexOfWalletSource = CursorUtil.getColumnIndexOrThrow(_cursor, "walletSource");
+          final int _cursorIndexOfDestinationWallet = CursorUtil.getColumnIndexOrThrow(_cursor, "destinationWallet");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final List<Transaction> _result = new ArrayList<Transaction>(_cursor.getCount());
           while (_cursor.moveToNext()) {
@@ -288,6 +294,8 @@ public final class TransactionDao_Impl implements TransactionDao {
             _tmpCategory = _cursor.getString(_cursorIndexOfCategory);
             final String _tmpWalletSource;
             _tmpWalletSource = _cursor.getString(_cursorIndexOfWalletSource);
+            final String _tmpDestinationWallet;
+            _tmpDestinationWallet = _cursor.getString(_cursorIndexOfDestinationWallet);
             final Date _tmpDate;
             final Long _tmp;
             if (_cursor.isNull(_cursorIndexOfDate)) {
@@ -301,7 +309,7 @@ public final class TransactionDao_Impl implements TransactionDao {
             } else {
               _tmpDate = _tmp_1;
             }
-            _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDate);
+            _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDestinationWallet,_tmpDate);
             _result.add(_item);
           }
           return _result;
@@ -332,6 +340,7 @@ public final class TransactionDao_Impl implements TransactionDao {
       final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
       final int _cursorIndexOfCategory = CursorUtil.getColumnIndexOrThrow(_cursor, "category");
       final int _cursorIndexOfWalletSource = CursorUtil.getColumnIndexOrThrow(_cursor, "walletSource");
+      final int _cursorIndexOfDestinationWallet = CursorUtil.getColumnIndexOrThrow(_cursor, "destinationWallet");
       final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
       final List<Transaction> _result = new ArrayList<Transaction>(_cursor.getCount());
       while (_cursor.moveToNext()) {
@@ -348,6 +357,8 @@ public final class TransactionDao_Impl implements TransactionDao {
         _tmpCategory = _cursor.getString(_cursorIndexOfCategory);
         final String _tmpWalletSource;
         _tmpWalletSource = _cursor.getString(_cursorIndexOfWalletSource);
+        final String _tmpDestinationWallet;
+        _tmpDestinationWallet = _cursor.getString(_cursorIndexOfDestinationWallet);
         final Date _tmpDate;
         final Long _tmp;
         if (_cursor.isNull(_cursorIndexOfDate)) {
@@ -361,7 +372,7 @@ public final class TransactionDao_Impl implements TransactionDao {
         } else {
           _tmpDate = _tmp_1;
         }
-        _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDate);
+        _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDestinationWallet,_tmpDate);
         _result.add(_item);
       }
       return _result;
@@ -389,6 +400,7 @@ public final class TransactionDao_Impl implements TransactionDao {
           final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
           final int _cursorIndexOfCategory = CursorUtil.getColumnIndexOrThrow(_cursor, "category");
           final int _cursorIndexOfWalletSource = CursorUtil.getColumnIndexOrThrow(_cursor, "walletSource");
+          final int _cursorIndexOfDestinationWallet = CursorUtil.getColumnIndexOrThrow(_cursor, "destinationWallet");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final List<Transaction> _result = new ArrayList<Transaction>(_cursor.getCount());
           while (_cursor.moveToNext()) {
@@ -405,6 +417,8 @@ public final class TransactionDao_Impl implements TransactionDao {
             _tmpCategory = _cursor.getString(_cursorIndexOfCategory);
             final String _tmpWalletSource;
             _tmpWalletSource = _cursor.getString(_cursorIndexOfWalletSource);
+            final String _tmpDestinationWallet;
+            _tmpDestinationWallet = _cursor.getString(_cursorIndexOfDestinationWallet);
             final Date _tmpDate;
             final Long _tmp;
             if (_cursor.isNull(_cursorIndexOfDate)) {
@@ -418,7 +432,7 @@ public final class TransactionDao_Impl implements TransactionDao {
             } else {
               _tmpDate = _tmp_1;
             }
-            _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDate);
+            _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDestinationWallet,_tmpDate);
             _result.add(_item);
           }
           return _result;
@@ -514,6 +528,7 @@ public final class TransactionDao_Impl implements TransactionDao {
           final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
           final int _cursorIndexOfCategory = CursorUtil.getColumnIndexOrThrow(_cursor, "category");
           final int _cursorIndexOfWalletSource = CursorUtil.getColumnIndexOrThrow(_cursor, "walletSource");
+          final int _cursorIndexOfDestinationWallet = CursorUtil.getColumnIndexOrThrow(_cursor, "destinationWallet");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final List<Transaction> _result = new ArrayList<Transaction>(_cursor.getCount());
           while (_cursor.moveToNext()) {
@@ -530,6 +545,8 @@ public final class TransactionDao_Impl implements TransactionDao {
             _tmpCategory = _cursor.getString(_cursorIndexOfCategory);
             final String _tmpWalletSource;
             _tmpWalletSource = _cursor.getString(_cursorIndexOfWalletSource);
+            final String _tmpDestinationWallet;
+            _tmpDestinationWallet = _cursor.getString(_cursorIndexOfDestinationWallet);
             final Date _tmpDate;
             final Long _tmp;
             if (_cursor.isNull(_cursorIndexOfDate)) {
@@ -543,7 +560,7 @@ public final class TransactionDao_Impl implements TransactionDao {
             } else {
               _tmpDate = _tmp_1;
             }
-            _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDate);
+            _item = new Transaction(_tmpId,_tmpDescription,_tmpAmount,_tmpType,_tmpCategory,_tmpWalletSource,_tmpDestinationWallet,_tmpDate);
             _result.add(_item);
           }
           return _result;
@@ -603,6 +620,7 @@ public final class TransactionDao_Impl implements TransactionDao {
     switch (_value) {
       case INCOME: return "INCOME";
       case EXPENSE: return "EXPENSE";
+      case TRANSFER: return "TRANSFER";
       default: throw new IllegalArgumentException("Can't convert enum to string, unknown enum value: " + _value);
     }
   }
@@ -611,6 +629,7 @@ public final class TransactionDao_Impl implements TransactionDao {
     switch (_value) {
       case "INCOME": return Transaction.Type.INCOME;
       case "EXPENSE": return Transaction.Type.EXPENSE;
+      case "TRANSFER": return Transaction.Type.TRANSFER;
       default: throw new IllegalArgumentException("Can't convert value to enum, unknown value: " + _value);
     }
   }

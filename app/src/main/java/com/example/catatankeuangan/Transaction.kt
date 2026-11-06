@@ -12,9 +12,10 @@ data class Transaction(
     val type: Type,
     val category: String = "General",
     val walletSource: String = "My Wallet",
+    val destinationWallet: String = "",
     val date: Date = Date()
 ) {
-    enum class Type { INCOME, EXPENSE }
+    enum class Type { INCOME, EXPENSE, TRANSFER }
 }
 
 enum class WalletSource(val displayName: String, val icon: String) {
