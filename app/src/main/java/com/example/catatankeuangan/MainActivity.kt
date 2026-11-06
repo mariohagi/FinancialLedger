@@ -119,6 +119,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CurrencyBitcoin
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.CreditCard
@@ -312,17 +313,20 @@ fun WalletSourceCard(
     containerColor: Color,
     modifier: Modifier = Modifier
 ) {
+    // Derive text color from container luminance so it's readable on both light and dark containers
+    val textColor = if (containerColor.luminance() > 0.3f)
+        Color(0xFF003828) else MaterialTheme.colorScheme.onSurface
+    val labelColor = if (containerColor.luminance() > 0.3f)
+        Color(0xFF004D38) else MaterialTheme.colorScheme.onSurfaceVariant
+
     Card(
-        modifier = modifier
-            .height(100.dp),
+        modifier = modifier.height(100.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = FinanceShapes.Medium,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxSize().padding(12.dp),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -331,19 +335,19 @@ fun WalletSourceCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Box(
-                    modifier = Modifier.size(28.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = labelColor,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = "", tint = iconColor, modifier = Modifier.size(18.dp))
                 }
             }
             Text(
-                FinanceFormatter.formatIDR(amount),
+                FinanceFormatter.formatIDRCompact(amount),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.W700,
-                color = MaterialTheme.colorScheme.onSurface
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -354,6 +358,7 @@ fun WalletSourceCard(
 // =====================================================================
 @Composable
 fun SummaryRow(income: Double, expense: Double) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -362,16 +367,18 @@ fun SummaryRow(income: Double, expense: Double) {
             label = "Income",
             amount = income,
             icon = Icons.Filled.TrendingUp,
-            iconColor = FinanceColors.IncomeGreen,
-            containerColor = FinanceColors.IncomeGreenContainer,
+            iconColor = if (isDark) FinanceColors.IncomeGreenDark else FinanceColors.IncomeGreen,
+            containerColor = if (isDark) FinanceColors.IncomeGreenContainerDark else FinanceColors.IncomeGreenContainer,
+            textColor = if (isDark) FinanceColors.IncomeGreenDark else FinanceColors.IncomeGreen,
             modifier = Modifier.weight(1f)
         )
         SummaryCard(
             label = "Expense",
             amount = -expense,
             icon = Icons.Filled.TrendingDown,
-            iconColor = FinanceColors.ExpenseRed,
-            containerColor = FinanceColors.ExpenseRedContainer,
+            iconColor = if (isDark) FinanceColors.ExpenseRedDark else FinanceColors.ExpenseRed,
+            containerColor = if (isDark) FinanceColors.ExpenseRedContainerDark else FinanceColors.ExpenseRedContainer,
+            textColor = if (isDark) FinanceColors.ExpenseRedDark else FinanceColors.ExpenseRed,
             modifier = Modifier.weight(1f)
         )
     }
@@ -384,6 +391,7 @@ fun SummaryCard(
     icon: ImageVector,
     iconColor: Color,
     containerColor: Color,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -406,7 +414,7 @@ fun SummaryCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, style = MaterialTheme.typography.labelLarge, color = textColor.copy(alpha = 0.75f))
                 Box(
                     modifier = Modifier.size(32.dp),
                     contentAlignment = Alignment.Center
@@ -418,7 +426,9 @@ fun SummaryCard(
                 FinanceFormatter.formatIDR(amount),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.W700,
-                color = MaterialTheme.colorScheme.onSurface
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -456,11 +466,22 @@ fun ChartCard(income: Double, expense: Double) {
                     .padding(bottom = 16.dp)
             ) {
                 if (hasData) {
+val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                    val holeColor = if (isDark) {
+                        AndroidColor.argb(
+                            MaterialTheme.colorScheme.surface.alpha,
+                            MaterialTheme.colorScheme.surface.red,
+                            MaterialTheme.colorScheme.surface.green,
+                            MaterialTheme.colorScheme.surface.blue
+                        )
+                    } else {
+                        AndroidColor.WHITE
+                    }
                     val centerTextColor = AndroidColor.argb(
-                        MaterialTheme.colorScheme.onSurfaceVariant.alpha,
-                        MaterialTheme.colorScheme.onSurfaceVariant.red,
-                        MaterialTheme.colorScheme.onSurfaceVariant.green,
-                        MaterialTheme.colorScheme.onSurfaceVariant.blue
+                        MaterialTheme.colorScheme.onSurface.alpha,
+                        MaterialTheme.colorScheme.onSurface.red,
+                        MaterialTheme.colorScheme.onSurface.green,
+                        MaterialTheme.colorScheme.onSurface.blue
                     )
                     AndroidView(
                         factory = { ctx ->
@@ -477,6 +498,7 @@ fun ChartCard(income: Double, expense: Double) {
                                 setDrawCenterText(true)
                                 setRotationAngle(270f)
                                 setDragDecelerationFrictionCoef(0.95f)
+                                setHoleColor(holeColor)
                             }
                         },
                         update = { chart ->
@@ -632,7 +654,20 @@ fun EmptyStateCard(icon: ImageVector, title: String, subtitle: String) {
 @Composable
 fun TransactionItem(tx: Transaction) {
     val isIncome = tx.type == Transaction.Type.INCOME
-    val amountColor = if (isIncome) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val amountColor = when {
+        isIncome && isDark -> FinanceColors.IncomeGreenDark
+        isIncome -> FinanceColors.IncomeGreen
+        isDark -> FinanceColors.ExpenseRedDark
+        else -> FinanceColors.ExpenseRed
+    }
+    val iconColor = amountColor
+    val iconBgColor = when {
+        isIncome && isDark -> FinanceColors.IncomeGreenContainerDark
+        isIncome -> FinanceColors.IncomeGreenContainer
+        isDark -> FinanceColors.ExpenseRedContainerDark
+        else -> FinanceColors.ExpenseRedContainer
+    }
     val amountPrefix = if (isIncome) "+" else "-"
 
     Card(
@@ -661,8 +696,6 @@ fun TransactionItem(tx: Transaction) {
                     modifier = Modifier.size(44.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val iconColor = if (isIncome) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed
-                    val iconBgColor = if (isIncome) FinanceColors.IncomeGreenContainer else FinanceColors.ExpenseRedContainer
                     Box(
                         modifier = Modifier
                             .size(44.dp)
@@ -708,10 +741,13 @@ fun TransactionItem(tx: Transaction) {
                 }
             }
             Text(
-                "$amountPrefix${FinanceFormatter.formatIDR(Math.abs(tx.amount))}",
-                style = MaterialTheme.typography.titleMedium,
+                "$amountPrefix${FinanceFormatter.formatIDRCompact(Math.abs(tx.amount))}",
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.W700,
-                color = amountColor
+                color = amountColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 120.dp)
             )
         }
     }
@@ -901,7 +937,20 @@ fun TransactionItemWithActions(
     onDelete: () -> Unit
 ) {
     val isIncome = tx.type == Transaction.Type.INCOME
-    val amountColor = if (isIncome) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val amountColor = when {
+        isIncome && isDark -> FinanceColors.IncomeGreenDark
+        isIncome -> FinanceColors.IncomeGreen
+        isDark -> FinanceColors.ExpenseRedDark
+        else -> FinanceColors.ExpenseRed
+    }
+    val iconColor = amountColor
+    val iconBgColor = when {
+        isIncome && isDark -> FinanceColors.IncomeGreenContainerDark
+        isIncome -> FinanceColors.IncomeGreenContainer
+        isDark -> FinanceColors.ExpenseRedContainerDark
+        else -> FinanceColors.ExpenseRedContainer
+    }
     val amountPrefix = if (isIncome) "+" else "-"
 
     Card(
@@ -930,8 +979,6 @@ fun TransactionItemWithActions(
                     modifier = Modifier.size(44.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val iconColor = if (isIncome) FinanceColors.IncomeGreen else FinanceColors.ExpenseRed
-                    val iconBgColor = if (isIncome) FinanceColors.IncomeGreenContainer else FinanceColors.ExpenseRedContainer
                     Box(
                         modifier = Modifier
                             .size(44.dp)
@@ -968,10 +1015,13 @@ fun TransactionItemWithActions(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "$amountPrefix${FinanceFormatter.formatIDR(Math.abs(tx.amount))}",
-                    style = MaterialTheme.typography.titleMedium,
+                    "$amountPrefix${FinanceFormatter.formatIDRCompact(Math.abs(tx.amount))}",
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.W700,
-                    color = amountColor
+                    color = amountColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 120.dp)
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(0.dp),

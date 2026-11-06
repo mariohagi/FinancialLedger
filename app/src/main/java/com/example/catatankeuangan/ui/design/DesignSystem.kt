@@ -148,10 +148,35 @@ object FinanceFormatter {
     fun format(amount: Double, currency: CurrencyInfo): String =
         CurrencyPreference.format(amount, currency)
 
-    /** Legacy IDR helper for places not yet plumbed with LocalCurrency. */
+    /** Legacy IDR helper. Strips trailing ",00" when fractional part is zero. */
     fun formatIDR(amount: Double): String {
         val formatter = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("id", "ID"))
-        return formatter.format(amount)
+        return formatter.format(amount).replace(Regex(",00$"), "")
+    }
+
+    /**
+     * Compact IDR for transaction lists — avoids layout overflow on large numbers.
+     *   < 1 jt  → full IDR format (e.g. Rp150.000)
+     *   >= 1 jt → "Rp15 jt"
+     *   >= 1 M  → "Rp1,5 M"
+     * Never modifies stored values — display only.
+     */
+    fun formatIDRCompact(amount: Double): String {
+        val abs = Math.abs(amount)
+        val sign = if (amount < 0) "-" else ""
+        return when {
+            abs >= 1_000_000_000.0 -> {
+                val v = abs / 1_000_000_000.0
+                val s = if (v % 1.0 < 0.05) "${v.toLong()} M" else "${String.format("%.1f", v)} M"
+                "${sign}Rp$s"
+            }
+            abs >= 1_000_000.0 -> {
+                val v = abs / 1_000_000.0
+                val s = if (v % 1.0 < 0.05) "${v.toLong()} jt" else "${String.format("%.1f", v)} jt"
+                "${sign}Rp$s"
+            }
+            else -> formatIDR(amount)
+        }
     }
 }
 
