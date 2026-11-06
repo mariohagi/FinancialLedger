@@ -3251,8 +3251,8 @@ fun FinancialLedgerApp() {
     val themePreference = rememberThemePreference(context)
         val isDark = themePreference.value == 1
         val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
-        val customBg = remember { mutableStateOf(ColorCustomizerPrefs.loadBackgroundColor(context, isDark)) }
-        val customBox = remember { mutableStateOf(ColorCustomizerPrefs.loadBoxColor(context, isDark)) }
+        val customBg = remember(isDark) { mutableStateOf(ColorCustomizerPrefs.loadBackgroundColor(context, isDark)) }
+        val customBox = remember(isDark) { mutableStateOf(ColorCustomizerPrefs.loadBoxColor(context, isDark)) }
     val dynamicText = customBg.value?.let { ColorCustomizerPrefs.getContrastTextColor(it) }
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme.copy(
