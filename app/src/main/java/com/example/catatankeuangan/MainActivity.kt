@@ -761,7 +761,7 @@ fun TransactionItem(tx: Transaction) {
 // =====================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalyticsScreen(repo: FinanceRepository) {
+fun AnalyticsScreen(repo: FinanceRepository, navController: NavHostController) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     
     var periodFilter by remember { mutableStateOf("Monthly") } // Daily, Monthly, Yearly
@@ -821,7 +821,7 @@ fun AnalyticsScreen(repo: FinanceRepository) {
         topBar = {
             TopAppBar(
                 title = { Text("Analytics", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.W600) },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
@@ -1034,28 +1034,32 @@ fun AnalyticsScreen(repo: FinanceRepository) {
                     val color = composeChartColors[index % composeChartColors.size]
 
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = FinanceShapes.Medium,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                )
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    navController.navigate("category_details/$categoryName/${txType.name}/$periodFilter/$selectedYear/$selectedMonth/$selectedDay")
+                                                },
+                                            shape = FinanceShapes.Medium,
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(16.dp)
+                                                            .clip(CircleShape)
+                                                            .background(color)
+                                                    )
                                 Column {
                                     Text(
                                         text = categoryName,
@@ -1085,11 +1089,113 @@ fun AnalyticsScreen(repo: FinanceRepository) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun CategoryDetailsScreen(
+    repo: FinanceRepository,
+    navController: NavHostController,
+    categoryName: String,
+    txType: String,
+    periodFilter: String,
+    year: Int,
+    month: Int,
+    day: Int
+) {
+    val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
+    val txTypeObj = if (txType == "INCOME") Transaction.Type.INCOME else Transaction.Type.EXPENSE
+    val filteredTransactions = remember(allTransactions, categoryName, txTypeObj, periodFilter, year, month, day) {
+        allTransactions.filter { tx ->
+            if (tx.category != categoryName || tx.type != txTypeObj) return@filter false
+            val cal = java.util.Calendar.getInstance().apply { time = tx.date }
+            val y = cal.get(java.util.Calendar.YEAR)
+            val m = cal.get(java.util.Calendar.MONTH) + 1
+            val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+            when (periodFilter) {
+                "Daily" -> y == year && m == month && d == day
+                "Monthly" -> y == year && m == month
+                "Yearly" -> y == year
+                else -> true
+            }
+        }.sortedByDescending { it.date }
+    }
+    val totalAmount = filteredTransactions.sumOf { Math.abs(it.amount) }
+    val txCount = filteredTransactions.size
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(categoryName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.W600) },
+                navigationIcon = {
+                                    IconButton(onClick = { navController.popBackStack() }) {
+                                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.background,
+                                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                                )
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = FinanceShapes.Medium,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Total: ${FinanceFormatter.formatIDR(totalAmount)}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.W600)
+                        Text("Count: $txCount", style = MaterialTheme.typography.bodyMedium)
+                        Text("Type: $txType", style = MaterialTheme.typography.bodyMedium)
+                        Text("Period: $periodFilter", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+            if (filteredTransactions.isEmpty()) {
+                item {
+                    Text("No transactions", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                }
+            } else {
+                items(filteredTransactions.size) { index ->
+                    val tx = filteredTransactions[index]
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FinanceShapes.Medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(tx.description.ifBlank { "Transaction" }, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.W500)
+                                Text(tx.date.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text(
+                                FinanceFormatter.formatIDR(Math.abs(tx.amount)),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.W600,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController) {
     val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-
-    // Build sorted list of (year, month) pairs present in data + current month
     val now = remember { java.util.Calendar.getInstance() }
     val currentYear  = now.get(java.util.Calendar.YEAR)
     val currentMonth = now.get(java.util.Calendar.MONTH) + 1 // 1-based
@@ -1122,9 +1228,9 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
+         TopAppBar(
             title = { Text("Transactions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.W600) },
-            colors = TopAppBarDefaults.mediumTopAppBarColors(
+            colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background,
                 titleContentColor = MaterialTheme.colorScheme.onSurface
             )
@@ -3250,8 +3356,36 @@ fun FinancialLedgerApp() {
                             txId = txId
                         )
                     }
-                    composable("analytics") { AnalyticsScreen(repo = repo) }
-                    composable("settings") {
+                    composable("analytics") { AnalyticsScreen(repo = repo, navController = navController) }
+                                        composable(
+                                            route = "category_details/{categoryName}/{txType}/{periodFilter}/{year}/{month}/{day}",
+                                            arguments = listOf(
+                                                navArgument("categoryName") { type = NavType.StringType },
+                                                navArgument("txType") { type = NavType.StringType },
+                                                navArgument("periodFilter") { type = NavType.StringType },
+                                                navArgument("year") { type = NavType.IntType },
+                                                navArgument("month") { type = NavType.IntType },
+                                                navArgument("day") { type = NavType.IntType }
+                                            )
+                                        ) { backStackEntry ->
+                                            val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+                                            val txTypeStr = backStackEntry.arguments?.getString("txType") ?: "EXPENSE"
+                                            val periodFilter = backStackEntry.arguments?.getString("periodFilter") ?: "Monthly"
+                                            val year = backStackEntry.arguments?.getInt("year") ?: 2026
+                                            val month = backStackEntry.arguments?.getInt("month") ?: 1
+                                            val day = backStackEntry.arguments?.getInt("day") ?: 1
+                                            CategoryDetailsScreen(
+                                                repo = repo,
+                                                navController = navController,
+                                                categoryName = categoryName,
+                                                txType = txTypeStr,
+                                                periodFilter = periodFilter,
+                                                year = year,
+                                                month = month,
+                                                day = day
+                                            )
+                                        }
+                                        composable("settings") {
                         val shareIntentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
                         SettingsScreen(
                             repo = repo,
