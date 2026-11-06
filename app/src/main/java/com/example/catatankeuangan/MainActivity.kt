@@ -2691,7 +2691,12 @@ fun FinancialLedgerApp() {
                                     }
                                 },
                                 icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                                label = { Text("Home") }
+                                label = { Text("Home") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primary
+                                )
                             )
                             NavigationBarItem(
                                 selected = currentRoute == "transactions",
@@ -2704,7 +2709,12 @@ fun FinancialLedgerApp() {
                                     }
                                 },
                                 icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
-                                label = { Text("Transactions") }
+                                label = { Text("Transactions") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primary
+                                )
                             )
                             NavigationBarItem(
                                 selected = currentRoute == "settings",
@@ -2717,7 +2727,12 @@ fun FinancialLedgerApp() {
                                     }
                                 },
                                 icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
-                                label = { Text("Settings") }
+                                label = { Text("Settings") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primary
+                                )
                             )
                         }
                     }
