@@ -345,7 +345,7 @@ fun WalletSourceCard(
                 }
             }
             Text(
-                FinanceFormatter.formatIDRCompact(amount),
+                FinanceFormatter.formatIDR(amount),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.W700,
                 color = textColor,
@@ -744,7 +744,7 @@ fun TransactionItem(tx: Transaction) {
                 }
             }
             Text(
-                "$amountPrefix${FinanceFormatter.formatIDRCompact(Math.abs(tx.amount))}",
+                "$amountPrefix${FinanceFormatter.formatIDR(Math.abs(tx.amount))}",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.W700,
                 color = amountColor,
@@ -1454,7 +1454,7 @@ fun TransactionItemWithActions(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "$amountPrefix${FinanceFormatter.formatIDRCompact(Math.abs(tx.amount))}",
+                    "$amountPrefix${FinanceFormatter.formatIDR(Math.abs(tx.amount))}",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.W700,
                     color = amountColor,
