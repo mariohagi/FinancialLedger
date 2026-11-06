@@ -846,7 +846,13 @@ fun AnalyticsScreen(repo: FinanceRepository, navController: NavHostController) {
                             selected = periodFilter == filter,
                             onClick = { periodFilter = filter },
                             label = { Text(filter) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }
