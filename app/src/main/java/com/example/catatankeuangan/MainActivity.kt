@@ -1684,7 +1684,7 @@ fun SettingsScreen(
     currency: MutableState<com.example.catatankeuangan.CurrencyInfo>,
     palettePreference: MutableState<com.example.catatankeuangan.PaletteInfo>,
     customBg: MutableState<Color?>,
-    customText: MutableState<Color?>
+    customBox: MutableState<Color?>,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1817,37 +1817,37 @@ fun SettingsScreen(
                                 Text("Apply")
                             }
                         }
-                        // Custom text color input
-                        var textHex by remember { mutableStateOf("") }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = textHex,
-                                onValueChange = { textHex = it },
-                                label = { Text("Text HEX (e.g. #1A1A1A)") },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                            Button(onClick = {
-                                try {
-                                    val c = Color(android.graphics.Color.parseColor(textHex.trim()))
-                                    customText.value = c
-                                    ColorPalette.saveCustomText(context, c)
-                                } catch (e: Exception) { /* ignore */ }
-                            }) {
-                                Text("Apply")
+                            // Box color input
+                            var boxHex by remember { mutableStateOf("") }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = boxHex,
+                                    onValueChange = { boxHex = it },
+                                    label = { Text("Box HEX (e.g. #FFFFFF)") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                Button(onClick = {
+                                    try {
+                                        val c = Color(android.graphics.Color.parseColor(boxHex.trim()))
+                                        customBox.value = c
+                                        ColorCustomizerPrefs.saveBoxColor(context, c)
+                                    } catch (e: Exception) { /* ignore */ }
+                                }) {
+                                    Text("Apply")
+                                }
                             }
-                        }
-                        TextButton(onClick = {
-                            customText.value = null
-                            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                                .edit().remove("custom_text").apply()
-                        }) {
-                            Text("Reset Text Color")
-                        }
+                            TextButton(onClick = {
+                                customBox.value = null
+                                context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                                    .edit().remove("custom_box").apply()
+                            }) {
+                                Text("Reset Box")
+                            }
                         TextButton(onClick = {
                             customBg.value = null
                             context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -2688,8 +2688,9 @@ fun FinancialLedgerApp() {
     // Issue 7 FIX: Theme preference drives MaterialTheme colorScheme directly via Compose state
     val themePreference = rememberThemePreference(context)
     val palettePreference = remember { mutableStateOf(ColorPalette.load(context)) }
-    val customBg = remember { mutableStateOf(ColorPalette.loadCustomBackground(context)) }
-    val customText = remember { mutableStateOf(ColorPalette.loadCustomText(context)) }
+    val customBg = remember { mutableStateOf(ColorCustomizerPrefs.loadBackgroundColor(context)) }
+    val customBox = remember { mutableStateOf(ColorCustomizerPrefs.loadBoxColor(context)) }
+    val dynamicText = customBg.value?.let { ColorCustomizerPrefs.getContrastTextColor(it) }
     val colorScheme = when (themePreference.value) {
         0 -> LightColorScheme.copy(
             primary = palettePreference.value.primary,
@@ -2697,11 +2698,11 @@ fun FinancialLedgerApp() {
             secondary = palettePreference.value.secondary,
             secondaryContainer = palettePreference.value.secondaryContainer,
             background = customBg.value ?: (palettePreference.value.backgroundTint ?: LightColorScheme.background),
-            surface = palettePreference.value.surfaceTint ?: LightColorScheme.surface,
-            surfaceVariant = palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceVariant,
-            surfaceContainer = palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceContainer,
-            onSurface = customText.value ?: LightColorScheme.onSurface,
-            onSurfaceVariant = customText.value ?: LightColorScheme.onSurfaceVariant,
+            surface = customBox.value ?: (palettePreference.value.surfaceTint ?: LightColorScheme.surface),
+            surfaceVariant = customBox.value ?: (palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceVariant),
+            surfaceContainer = customBox.value ?: (palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceContainer),
+            onSurface = dynamicText ?: LightColorScheme.onSurface,
+            onSurfaceVariant = dynamicText ?: LightColorScheme.onSurfaceVariant,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
             surfaceTint = palettePreference.value.primary
@@ -2711,6 +2712,12 @@ fun FinancialLedgerApp() {
             primaryContainer = palettePreference.value.primaryContainer,
             secondary = palettePreference.value.secondary,
             secondaryContainer = palettePreference.value.secondaryContainer,
+            background = customBg.value ?: DarkColorScheme.background,
+            surface = customBox.value ?: DarkColorScheme.surface,
+            surfaceVariant = customBox.value ?: DarkColorScheme.surfaceVariant,
+            surfaceContainer = customBox.value ?: DarkColorScheme.surfaceContainer,
+            onSurface = dynamicText ?: DarkColorScheme.onSurface,
+            onSurfaceVariant = dynamicText ?: DarkColorScheme.onSurfaceVariant,
             onPrimary = palettePreference.value.onPrimary,
             onPrimaryContainer = palettePreference.value.onPrimaryContainer,
             surfaceTint = palettePreference.value.primary
@@ -2723,10 +2730,12 @@ fun FinancialLedgerApp() {
                 primaryContainer = palettePreference.value.primaryContainer,
                 secondary = palettePreference.value.secondary,
                 secondaryContainer = palettePreference.value.secondaryContainer,
-                background = if (isSystemDark) DarkColorScheme.background else (customBg.value ?: (palettePreference.value.backgroundTint ?: LightColorScheme.background)),
-                surface = if (isSystemDark) DarkColorScheme.surface else (palettePreference.value.surfaceTint ?: LightColorScheme.surface),
-                surfaceVariant = if (isSystemDark) DarkColorScheme.surfaceVariant else (palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceVariant),
-                surfaceContainer = if (isSystemDark) DarkColorScheme.surfaceContainer else (palettePreference.value.cardContainerTint ?: LightColorScheme.surfaceContainer),
+                background = customBg.value ?: base.background,
+                surface = customBox.value ?: base.surface,
+                surfaceVariant = customBox.value ?: base.surfaceVariant,
+                surfaceContainer = customBox.value ?: base.surfaceContainer,
+                onSurface = dynamicText ?: base.onSurface,
+                onSurfaceVariant = dynamicText ?: base.onSurfaceVariant,
                 onPrimary = palettePreference.value.onPrimary,
                 onPrimaryContainer = palettePreference.value.onPrimaryContainer,
                 surfaceTint = palettePreference.value.primary
@@ -2851,7 +2860,7 @@ fun FinancialLedgerApp() {
                             currency = currency,
                             palettePreference = palettePreference,
                             customBg = customBg,
-                            customText = customText
+                            customBox = customBox
                         )
                     }
                 }
