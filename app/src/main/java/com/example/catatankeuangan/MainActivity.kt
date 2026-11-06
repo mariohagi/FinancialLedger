@@ -161,6 +161,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.WindowCompat
 
 // =====================================================================
 // HOME SCREEN
@@ -3475,9 +3477,17 @@ fun FinancialLedgerApp() {
 public class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Issue 1: DO NOT call enableEdgeToEdge() - it causes the black bar artifact
         setContent {
+            val context = this
             FinancialLedgerApp()
+            // Sync status bar color with background color
+            LaunchedEffect(Unit) {
+                val bg = ColorCustomizerPrefs.loadBackgroundColor(context, false)
+                if (bg != null) {
+                    window.statusBarColor = bg.toArgb()
+                    WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = bg.luminance() > 0.5f
+                }
+            }
         }
     }
 }
