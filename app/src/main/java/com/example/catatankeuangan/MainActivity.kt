@@ -42,11 +42,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
@@ -56,7 +57,6 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.VideogameAsset
@@ -757,8 +757,332 @@ fun TransactionItem(tx: Transaction) {
 }
 
 // =====================================================================
-// TRANSACTIONS SCREEN — Task 4: Monthly navigation bar
+// ANALYTICS SCREEN — Pie chart, daily/monthly/yearly, income/expense switch
 // =====================================================================
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnalyticsScreen(repo: FinanceRepository) {
+    val allTransactions by repo.allTransactions.collectAsState(initial = emptyList())
+    
+    var periodFilter by remember { mutableStateOf("Monthly") } // Daily, Monthly, Yearly
+    var txType by remember { mutableStateOf(Transaction.Type.EXPENSE) } // INCOME, EXPENSE
+
+    val now = remember { java.util.Calendar.getInstance() }
+    var selectedYear by remember { mutableStateOf(now.get(java.util.Calendar.YEAR)) }
+    var selectedMonth by remember { mutableStateOf(now.get(java.util.Calendar.MONTH) + 1) }
+    var selectedDay by remember { mutableStateOf(now.get(java.util.Calendar.DAY_OF_MONTH)) }
+
+    // Filter transactions based on period & type
+    val filteredTransactions = remember(allTransactions, periodFilter, selectedYear, selectedMonth, selectedDay, txType) {
+        allTransactions.filter { tx ->
+            if (tx.type != txType) return@filter false
+            val cal = java.util.Calendar.getInstance().apply { time = tx.date }
+            val y = cal.get(java.util.Calendar.YEAR)
+            val m = cal.get(java.util.Calendar.MONTH) + 1
+            val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+            when (periodFilter) {
+                "Daily" -> y == selectedYear && m == selectedMonth && d == selectedDay
+                "Monthly" -> y == selectedYear && m == selectedMonth
+                "Yearly" -> y == selectedYear
+                else -> true
+            }
+        }
+    }
+
+    val totalAmount = filteredTransactions.sumOf { Math.abs(it.amount) }
+
+    // Group by category
+    val categoryMap = remember(filteredTransactions) {
+        val map = mutableMapOf<String, Double>()
+        filteredTransactions.forEach { tx ->
+            val cat = if (tx.category.isBlank()) "General" else tx.category
+            map[cat] = (map[cat] ?: 0.0) + Math.abs(tx.amount)
+        }
+        map.entries.sortedByDescending { it.value }
+    }
+
+    val chartColors = listOf(
+        AndroidColor.parseColor("#1565C0"),
+        AndroidColor.parseColor("#00796B"),
+        AndroidColor.parseColor("#E65100"),
+        AndroidColor.parseColor("#6750A4"),
+        AndroidColor.parseColor("#2E7D32"),
+        AndroidColor.parseColor("#C62828"),
+        AndroidColor.parseColor("#AD1457"),
+        AndroidColor.parseColor("#0288D1")
+    )
+
+    val composeChartColors = listOf(
+        Color(0xFF1565C0), Color(0xFF00796B), Color(0xFFE65100), Color(0xFF6750A4),
+        Color(0xFF2E7D32), Color(0xFFC62828), Color(0xFFAD1457), Color(0xFF0288D1)
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Analytics", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.W600) },
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Period Filter Chips
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Daily", "Monthly", "Yearly").forEach { filter ->
+                        FilterChip(
+                            selected = periodFilter == filter,
+                            onClick = { periodFilter = filter },
+                            label = { Text(filter) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Income / Expense Switch
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { txType = Transaction.Type.EXPENSE },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (txType == Transaction.Type.EXPENSE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (txType == Transaction.Type.EXPENSE) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Text("Expenses")
+                    }
+                    Button(
+                        onClick = { txType = Transaction.Type.INCOME },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (txType == Transaction.Type.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (txType == Transaction.Type.INCOME) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Text("Income")
+                    }
+                }
+            }
+
+            // Date selector display / buttons
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = FinanceShapes.Medium,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = when (periodFilter) {
+                                                            "Daily" -> "$selectedDay/$selectedMonth/$selectedYear"
+                                                            "Monthly" -> "Month: $selectedMonth, Year: $selectedYear"
+                                                            else -> "Year: $selectedYear"
+                                                        },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.W600
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(onClick = {
+                                if (periodFilter == "Daily") selectedDay = (selectedDay - 1).coerceAtLeast(1)
+                                else if (periodFilter == "Monthly") selectedMonth = if (selectedMonth > 1) selectedMonth - 1 else { selectedYear--; 12 }
+                                else selectedYear--
+                            }) { Text("<") }
+                            TextButton(onClick = {
+                                if (periodFilter == "Daily") selectedDay++
+                                else if (periodFilter == "Monthly") selectedMonth = if (selectedMonth < 12) selectedMonth + 1 else { selectedYear++; 1 }
+                                else selectedYear++
+                            }) { Text(">") }
+                        }
+                    }
+                }
+            }
+
+            // Pie Chart Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp),
+                    shape = FinanceShapes.Large,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "${txType.name} Breakdown",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.W600
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (filteredTransactions.isEmpty()) {
+                                Text(
+                                    "No transactions for this period",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                                val holeColor = if (isDark) {
+                                    AndroidColor.argb(
+                                        MaterialTheme.colorScheme.surface.alpha,
+                                        MaterialTheme.colorScheme.surface.red,
+                                        MaterialTheme.colorScheme.surface.green,
+                                        MaterialTheme.colorScheme.surface.blue
+                                    )
+                                } else {
+                                    AndroidColor.WHITE
+                                }
+                                val centerTextColor = AndroidColor.argb(
+                                    MaterialTheme.colorScheme.onSurface.alpha,
+                                    MaterialTheme.colorScheme.onSurface.red,
+                                    MaterialTheme.colorScheme.onSurface.green,
+                                    MaterialTheme.colorScheme.onSurface.blue
+                                )
+                                AndroidView(
+                                    factory = { ctx ->
+                                        PieChart(ctx).apply {
+                                            legend.isEnabled = false
+                                            description.isEnabled = false
+                                            setUsePercentValues(true)
+                                            setDrawEntryLabels(false)
+                                            setCenterText(FinanceFormatter.formatIDR(totalAmount))
+                                            setCenterTextSize(12f)
+                                            setCenterTextColor(centerTextColor)
+                                            setHoleRadius(50f)
+                                            setTransparentCircleRadius(55f)
+                                            setDrawCenterText(true)
+                                            setHoleColor(holeColor)
+                                        }
+                                    },
+                                    update = { chart ->
+                                        val entries = categoryMap.mapIndexed { index, entry ->
+                                            PieEntry(entry.value.toFloat(), entry.key)
+                                        }
+                                        val dataSet = PieDataSet(entries, "").apply {
+                                            colors = chartColors.take(entries.size)
+                                            sliceSpace = 2f
+                                        }
+                                        chart.data = PieData(dataSet).apply {
+                                            setValueTextSize(10f)
+                                            setValueTextColor(AndroidColor.WHITE)
+                                        }
+                                        chart.centerText = FinanceFormatter.formatIDR(totalAmount)
+                                        chart.invalidate()
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Category Breakdown List Header
+            item {
+                Text(
+                    text = "Category Breakdown",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.W600
+                )
+            }
+
+            if (categoryMap.isEmpty()) {
+                item {
+                    Text(
+                        "No data available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                }
+            } else {
+                items(categoryMap.size) { index ->
+                    val (categoryName, amount) = categoryMap[index]
+                    val percentage = if (totalAmount > 0) (amount / totalAmount * 100) else 0.0
+                    val color = composeChartColors[index % composeChartColors.size]
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FinanceShapes.Medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                )
+                                Column {
+                                    Text(
+                                        text = categoryName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.W500
+                                    )
+                                    Text(
+                                        text = String.format("%.1f%%", percentage),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Text(
+                                text = FinanceFormatter.formatIDR(amount),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.W600,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController) {
@@ -2804,7 +3128,7 @@ fun FinancialLedgerApp() {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "home"
-    val isTopLevel = currentRoute in listOf("home", "transactions", "settings")
+    val isTopLevel = currentRoute in listOf("home", "transactions", "analytics", "settings")
 
     MaterialTheme(
         colorScheme = colorScheme,
@@ -2851,6 +3175,24 @@ fun FinancialLedgerApp() {
                                 },
                                 icon = { Icon(Icons.Filled.Receipt, contentDescription = "Transactions") },
                                 label = { Text("Transactions") },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == "analytics",
+                                onClick = {
+                                    if (currentRoute != "analytics") {
+                                        navController.navigate("analytics") {
+                                            popUpTo("home")
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                },
+                                icon = { Icon(Icons.Filled.BarChart, contentDescription = "Analytics") },
+                                label = { Text("Analytics") },
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.onPrimary,
                                     selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -2907,6 +3249,7 @@ fun FinancialLedgerApp() {
                             txId = txId
                         )
                     }
+                    composable("analytics") { AnalyticsScreen(repo = repo) }
                     composable("settings") {
                         val shareIntentLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
                         SettingsScreen(
