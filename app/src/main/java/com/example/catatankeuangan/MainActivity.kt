@@ -2300,9 +2300,20 @@ fun SettingsScreen(
                         }) {
                             Text("Reset to Default")
                         }
+                        val isDarkTheme = themePreference.value == 1
                         // Background color swatches (from ColorPalette)
                         Text("Background Color", style = MaterialTheme.typography.titleMedium)
-                        val paletteColors = ColorPalette.palettes.map { it.backgroundTint ?: it.primaryContainer }
+                        val rawBgColors = ColorPalette.palettes.map { it.backgroundTint ?: it.primaryContainer }
+                        val paletteColors = rawBgColors.map { c ->
+                            if (isDarkTheme) {
+                                Color(
+                                    red = (c.red * 0.35f).coerceIn(0f, 1f),
+                                    green = (c.green * 0.35f).coerceIn(0f, 1f),
+                                    blue = (c.blue * 0.35f).coerceIn(0f, 1f),
+                                    alpha = c.alpha
+                                )
+                            } else c
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -2352,9 +2363,19 @@ fun SettingsScreen(
                             }
                         }
 
+                        val boxRawColors = ColorPalette.palettes.map { it.cardContainerTint ?: Color.White }
                         // Box color swatches (from ColorPalette)
                         Text("Box Color", style = MaterialTheme.typography.titleMedium)
-                        val boxPaletteColors = ColorPalette.palettes.map { it.cardContainerTint ?: Color.White }
+                        val boxPaletteColors = boxRawColors.map { c ->
+                            if (isDarkTheme) {
+                                Color(
+                                    red = (c.red * 0.35f).coerceIn(0f, 1f),
+                                    green = (c.green * 0.35f).coerceIn(0f, 1f),
+                                    blue = (c.blue * 0.35f).coerceIn(0f, 1f),
+                                    alpha = c.alpha
+                                )
+                            } else c
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
