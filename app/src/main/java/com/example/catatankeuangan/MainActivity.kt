@@ -285,9 +285,11 @@ fun BalanceCard(
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     items(wallets, key = { it.id }) { wallet ->
-                        val walletBalance = allTransactions
-                            .filter { it.walletSource.equals(wallet.name, ignoreCase = true) || (it.walletSource == "WALLET" && wallet.name == "My Wallet") }
-                            .sumOf { it.amount }
+                        val walletBalance = remember(allTransactions, wallet.name) {
+                            allTransactions
+                                .filter { it.walletSource.equals(wallet.name, ignoreCase = true) || (it.walletSource == "WALLET" && wallet.name == "My Wallet") }
+                                .sumOf { it.amount }
+                        }
                         WalletSourceCard(
                             label = wallet.name,
                             amount = walletBalance,
