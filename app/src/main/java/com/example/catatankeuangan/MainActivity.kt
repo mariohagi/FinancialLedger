@@ -2316,9 +2316,9 @@ fun SettingsScreen(
                         val paletteColors = rawBgColors.map { c ->
                             if (isDarkTheme) {
                                 Color(
-                                    red = (c.red * 0.35f).coerceIn(0f, 1f),
-                                    green = (c.green * 0.35f).coerceIn(0f, 1f),
-                                    blue = (c.blue * 0.35f).coerceIn(0f, 1f),
+                                    red = (c.red * 0.4f).coerceIn(0f, 1f),
+                                    green = (c.green * 0.4f).coerceIn(0f, 1f),
+                                    blue = (c.blue * 0.4f).coerceIn(0f, 1f),
                                     alpha = c.alpha
                                 )
                             } else c
@@ -2378,9 +2378,9 @@ fun SettingsScreen(
                         val boxPaletteColors = boxRawColors.map { c ->
                             if (isDarkTheme) {
                                 Color(
-                                    red = (c.red * 0.35f).coerceIn(0f, 1f),
-                                    green = (c.green * 0.35f).coerceIn(0f, 1f),
-                                    blue = (c.blue * 0.35f).coerceIn(0f, 1f),
+                                    red = (c.red * 0.4f).coerceIn(0f, 1f),
+                                    green = (c.green * 0.4f).coerceIn(0f, 1f),
+                                    blue = (c.blue * 0.4f).coerceIn(0f, 1f),
                                     alpha = c.alpha
                                 )
                             } else c
