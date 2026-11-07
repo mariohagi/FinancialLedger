@@ -17,6 +17,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -3452,7 +3459,15 @@ fun FinancialLedgerApp() {
                     }
                 }
             ) { innerPadding ->
-                NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
+                NavHost(
+                    navController = navController,
+                    startDestination = "home",
+                    modifier = Modifier.padding(innerPadding),
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+                ) {
                     composable("home") { HomeScreen(repo = repo) }
                     composable("transactions") { TransactionsScreen(repo = repo, navController = navController) }
                     // Issue 6 FIX: Proper navArgument with NavType.StringType, parse as Int
