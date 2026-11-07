@@ -3107,13 +3107,13 @@ fun CsvImportDialog(
                                 toImport.forEach { row ->
                                     runCatching {
                                         // Ensure wallet exists for imported transaction
-                                        val walletExists = repo.getAllWalletsList().any { it.name.equals(row.walletSource, ignoreCase = true) }
+                                        val walletExists = kotlinx.coroutines.runBlocking { repo.getAllWalletsList() }.any { it.name.equals(row.walletSource, ignoreCase = true) }
                                         if (!walletExists && row.walletSource.isNotBlank()) {
-                                            repo.insertWallet(Wallet(name = row.walletSource))
+                                            kotlinx.coroutines.runBlocking { repo.insertWallet(Wallet(name = row.walletSource)) }
                                         }
-                                        val destWalletExists = repo.getAllWalletsList().any { it.name.equals(row.destinationWallet, ignoreCase = true) }
+                                        val destWalletExists = kotlinx.coroutines.runBlocking { repo.getAllWalletsList() }.any { it.name.equals(row.destinationWallet, ignoreCase = true) }
                                         if (row.type == Transaction.Type.TRANSFER && row.destinationWallet.isNotBlank() && !destWalletExists) {
-                                            repo.insertWallet(Wallet(name = row.destinationWallet))
+                                            kotlinx.coroutines.runBlocking { repo.insertWallet(Wallet(name = row.destinationWallet)) }
                                         }
 
                                         val tx = Transaction(
