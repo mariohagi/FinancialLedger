@@ -284,7 +284,7 @@ fun BalanceCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(0.dp)
                 ) {
-                    items(wallets) { wallet ->
+                    items(wallets, key = { it.id }) { wallet ->
                         val walletBalance = allTransactions
                             .filter { it.walletSource.equals(wallet.name, ignoreCase = true) || (it.walletSource == "WALLET" && wallet.name == "My Wallet") }
                             .sumOf { it.amount }
@@ -1237,7 +1237,7 @@ fun CategoryDetailsScreen(
                             Text("No transactions", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
                         }
                     } else {
-                items(filteredTransactions.size) { index ->
+                items(filteredTransactions.size, key = { index -> filteredTransactions[index].id }) { index ->
                     val tx = filteredTransactions[index]
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -1427,7 +1427,7 @@ fun TransactionsScreen(repo: FinanceRepository, navController: NavHostController
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
                 ) {
-                    items(monthlyTransactions) { tx ->
+                    items(monthlyTransactions, key = { it.id }) { tx ->
                         TransactionItemWithActions(
                             tx = tx,
                             onEdit = { navController.navigate("add_transaction/${tx.id}") },
