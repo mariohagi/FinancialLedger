@@ -3463,10 +3463,10 @@ fun FinancialLedgerApp() {
                     navController = navController,
                     startDestination = "home",
                     modifier = Modifier.padding(innerPadding),
-                    enterTransition = { slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
-                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
-                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
-                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(150, easing = FastOutSlowInEasing)) },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(150, easing = FastOutSlowInEasing)) },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(150, easing = FastOutSlowInEasing)) },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(150, easing = FastOutSlowInEasing)) }
                 ) {
                     composable("home") { HomeScreen(repo = repo) }
                     composable("transactions") { TransactionsScreen(repo = repo, navController = navController) }
