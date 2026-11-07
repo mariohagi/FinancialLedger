@@ -2974,9 +2974,9 @@ fun exportData(context: Context, repo: FinanceRepository, scope: kotlinx.corouti
     scope.launch(Dispatchers.IO) {
         val transactions = repo.db.transactionDao().getAll()
         val csv = StringBuilder()
-        csv.appendLine("ID,Description,Amount,Type,Category,Wallet Source,Date")
+        csv.appendLine("ID,Description,Amount,Type,Category,Wallet Source,Destination Wallet,Date")
         transactions.forEach { tx ->
-            csv.appendLine("${tx.id},${tx.description},${tx.amount},${tx.type},${tx.category},${tx.walletSource},${tx.date.time}")
+            csv.appendLine("${tx.id},${tx.description},${tx.amount},${tx.type},${tx.category},${tx.walletSource},${tx.destinationWallet},${tx.date.time}")
         }
 
         val fileName = "financial_ledger_export_${java.text.SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
@@ -3019,6 +3019,7 @@ fun CsvImportDialog(
         val type: Transaction.Type,
         val category: String,
         val walletSource: String,
+        val destinationWallet: String,
         val date: java.util.Date,
         val fingerprint: String  // for duplicate detection
     )
@@ -3026,7 +3027,7 @@ fun CsvImportDialog(
     // Parse CSV
     val lines = csvText.lines().filter { it.isNotBlank() }
     val header = lines.firstOrNull()?.trim()
-    val expectedHeader = "ID,Description,Amount,Type,Category,Wallet Source,Date"
+    val expectedHeader = "ID,Description,Amount,Type,Category,Wallet Source,Destination Wallet,Date"
     val headerOk = header?.startsWith("ID,") == true
 
     val parsed = mutableListOf<ParsedRow>()
@@ -3039,13 +3040,16 @@ fun CsvImportDialog(
             runCatching {
                 val desc = parts[1].trim()
                 val amount = parts[2].trim().toDouble()
-                val type = if (parts[3].trim().uppercase().contains("INCOME"))
-                    Transaction.Type.INCOME else Transaction.Type.EXPENSE
+                val typeStr = parts[3].trim().uppercase()
+                val type = if (typeStr.contains("TRANSFER")) Transaction.Type.TRANSFER
+                    else if (typeStr.contains("INCOME")) Transaction.Type.INCOME
+                    else Transaction.Type.EXPENSE
                 val cat = parts[4].trim()
                 val wallet = parts[5].trim()
-                val date = java.util.Date(parts[6].trim().toLong())
-                val fp = "${desc}|${amount}|${type}|${cat}|${wallet}|${date.time}"
-                parsed.add(ParsedRow(desc, amount, type, cat, wallet, date, fp))
+                val destWallet = if (parts.size >= 8) parts[6].trim() else ""
+                val date = java.util.Date(parts[if (parts.size >= 8) 7 else 6].trim().toLong())
+                val fingerprint = "${desc}|${amount}|${type}|${cat}|${wallet}|${destWallet}|${date.time}"
+                parsed.add(ParsedRow(desc, amount, type, cat, wallet, destWallet, date, fingerprint))
             }.onFailure { errors.add("Row ${i+2}: ${it.message}") }
         }
     }
@@ -3092,8 +3096,8 @@ fun CsvImportDialog(
                         scope.launch(Dispatchers.IO) {
                             val existing = repo.getAllTransactionsList()
                             val existingFps = existing.map {
-                                "${it.description}|${it.amount}|${it.type}|${it.category}|${it.walletSource}|${it.date.time}"
-                            }.toSet()
+                                                            "${it.description}|${it.amount}|${it.type}|${it.category}|${it.walletSource}|${it.destinationWallet}|${it.date.time}"
+                                                        }.toSet()
                             val toImport = parsed.filter { it.fingerprint !in existingFps }
                             val skipped = parsed.size - toImport.size
                             var succeeded = 0
@@ -3102,6 +3106,16 @@ fun CsvImportDialog(
                             repo.db.runInTransaction {
                                 toImport.forEach { row ->
                                     runCatching {
+                                        // Ensure wallet exists for imported transaction
+                                        val walletExists = repo.getAllWalletsList().any { it.name.equals(row.walletSource, ignoreCase = true) }
+                                        if (!walletExists && row.walletSource.isNotBlank()) {
+                                            repo.insertWallet(Wallet(name = row.walletSource))
+                                        }
+                                        val destWalletExists = repo.getAllWalletsList().any { it.name.equals(row.destinationWallet, ignoreCase = true) }
+                                        if (row.type == Transaction.Type.TRANSFER && row.destinationWallet.isNotBlank() && !destWalletExists) {
+                                            repo.insertWallet(Wallet(name = row.destinationWallet))
+                                        }
+
                                         val tx = Transaction(
                                             id = 0,
                                             description = row.description,
@@ -3109,6 +3123,7 @@ fun CsvImportDialog(
                                             type = row.type,
                                             category = row.category,
                                             walletSource = row.walletSource,
+                                            destinationWallet = row.destinationWallet,
                                             date = row.date
                                         )
                                         // Must run blocking in the transaction lambda
